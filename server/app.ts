@@ -35,6 +35,7 @@ const AI_LIMIT_PER_MIN = Number(process.env.MIRA_AI_LIMIT_PER_MIN || 30);
 const hits = new Map<string, number[]>();
 function aiLimit(req: Request, res: Response, next: NextFunction) {
   const t = Date.now();
+  if (hits.size > 5_000) hits.clear(); // bound memory under abuse
   const key = req.ip ?? 'unknown';
   const recent = (hits.get(key) ?? []).filter((x) => t - x < 60_000);
   if (recent.length >= AI_LIMIT_PER_MIN) return res.status(429).json({ error: 'Too many AI requests. Please wait a minute.' });
@@ -42,6 +43,8 @@ function aiLimit(req: Request, res: Response, next: NextFunction) {
   hits.set(key, recent);
   next();
 }
+
+const BUSY = 'Agents are busy with a previous request. Please wait a moment.';
 
 const api = express.Router();
 
@@ -77,7 +80,7 @@ api.put('/profile', aiLimit, (req, res) => {
   // De-duplicate skills (keep the last entry for each skill).
   const skills = [...new Map(p.skills.map((s) => [s.skillId, s])).values()].filter((s) => s.selfLevel > 0);
   try {
-    if (store.activeRunId()) throw new BusyError('Agents are busy with a previous request. Please wait a moment.');
+    if (store.activeRunId()) throw new BusyError(BUSY);
     store.saveProfile({ ...p, skills });
     res.json({ runId: startAnalyze('profile_updated') });
   } catch (e) { sendErr(res, e); }
@@ -93,7 +96,7 @@ api.post('/goal', aiLimit, (req, res) => {
   const profile = store.getProfile()!;
   if (profile.targetRoleId === roleId.data.roleId) return res.status(400).json({ error: 'That is already your current goal' });
   try {
-    if (store.activeRunId()) throw new BusyError('Agents are busy with a previous request. Please wait a moment.');
+    if (store.activeRunId()) throw new BusyError(BUSY);
     const from = profile.targetRoleId;
     store.saveProfile({ ...profile, targetRoleId: roleId.data.roleId });
     res.json({ runId: startGoalChange(from, roleId.data.roleId) });
@@ -114,7 +117,7 @@ api.post('/assessments/:id/submit', aiLimit, (req, res) => {
   const answers = body.data.answers;
   const answered = countAnswered(def, answers);
   if (answered < def.questions.length) return res.status(400).json({ error: `Please answer all ${def.questions.length} questions (${answered} answered).` });
-  if (store.activeRunId()) return res.status(409).json({ error: 'Agents are busy with a previous request. Please wait a moment.' });
+  if (store.activeRunId()) return res.status(409).json({ error: BUSY });
 
   const before = currentSnapshot(); // Career Twin state just before this result is applied
   const t0 = Date.now();
@@ -183,7 +186,7 @@ api.post('/mentor', aiLimit, async (req, res) => {
 });
 
 api.post('/demo/reset', (_req, res) => {
-  if (store.activeRunId()) return res.status(409).json({ error: 'Agents are busy. Try again in a moment.' });
+  if (store.activeRunId()) return res.status(409).json({ error: BUSY });
   seedDemo(true);
   res.json(buildState());
 });

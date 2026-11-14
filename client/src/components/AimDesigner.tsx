@@ -4,7 +4,7 @@ import { LEVEL_LABELS, skillName } from '../../../shared/catalog';
 import type { RoleDef } from '../../../shared/types';
 import { api, type DesignedRole } from '../api';
 import { MiraAvatar } from './MiraAvatar';
-import { Badge, Button, Spinner } from './ui';
+import { Button, Spinner } from './ui';
 
 /** Type any career aim; Mira designs 3 role profiles from catalog skills; shuffle for alternatives; pick one. */
 export function AimDesigner({ onSelect }: { onSelect: (role: RoleDef) => void | Promise<void> }) {
@@ -30,7 +30,7 @@ export function AimDesigner({ onSelect }: { onSelect: (role: RoleDef) => void | 
   };
 
   return (
-    <div className="rounded-xl bg-indigo-500/5 p-4 ring-1 ring-indigo-400/20">
+    <div className="@container rounded-xl bg-indigo-500/5 p-4 ring-1 ring-indigo-400/20">
       <div className="flex items-center gap-2 text-sm font-semibold text-white"><MiraAvatar size="sm" /> Design your own aim with Mira</div>
       <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); void ask(false); }}>
         <label className="sr-only" htmlFor="aim-input">Your career aim</label>
@@ -41,17 +41,21 @@ export function AimDesigner({ onSelect }: { onSelect: (role: RoleDef) => void | 
       {error && <p role="alert" className="mt-2 text-sm text-rose-300">{error}</p>}
       {options.length > 0 && (
         <>
-          <div className="mt-4 flex items-center justify-between">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-white/60">Built only from skills Mira can assess and teach. Illustrative benchmarks, not hiring standards.</p>
             <Button variant="ghost" onClick={() => ask(true)} disabled={busy !== null}><ArrowPathIcon aria-hidden className={`size-4 ${busy === 'ask' ? 'animate-spin' : ''}`} /> Shuffle</Button>
           </div>
-          <ul className="mt-2 grid gap-3 md:grid-cols-3">
+          <ul className="mt-2 grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-3">
             {options.map((o) => (
               <li key={o.title} className="flex flex-col rounded-xl bg-white/5 p-4 ring-1 ring-white/10">
                 <div className="text-sm font-semibold text-white">{o.title}</div>
                 <p className="mt-1 text-xs text-white/60">{o.summary}</p>
                 <ul className="mt-3 flex flex-wrap gap-1">
-                  {o.requirements.map((q) => <li key={q.skillId}><Badge tone={q.weight === 3 ? 'brand' : 'slate'}>{skillName(q.skillId)} · {LEVEL_LABELS[q.level]}</Badge></li>)}
+                  {o.requirements.map((q) => (
+                    <li key={q.skillId} className={`max-w-full rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset break-words ${q.weight === 3 ? 'bg-indigo-400/10 text-indigo-300 ring-indigo-400/30' : 'bg-white/5 text-white/80 ring-white/10'}`}>
+                      {skillName(q.skillId)} · {LEVEL_LABELS[q.level]}
+                    </li>
+                  ))}
                 </ul>
                 <Button className="mt-4 self-start" variant="secondary" onClick={() => use(o)} disabled={busy !== null}><CheckIcon aria-hidden className="size-4" /> Use this aim</Button>
               </li>

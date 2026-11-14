@@ -1,4 +1,5 @@
 import { ArrowTopRightOnSquareIcon, ClipboardDocumentCheckIcon, MapIcon, SparklesIcon } from '@heroicons/react/20/solid';
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react';
 import { useState } from 'react';
 import { LEVEL_LABELS, RESOURCE_BY_ID, ROLE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
 import { useApp } from '../App';
@@ -104,36 +105,51 @@ export function Overview() {
         </Card>
       </div>
 
-      <Card title="Progress timeline" subtitle="Everything that changed your plan, newest first">
-        {(() => {
-          type Ev = { at: string; tone: 'emerald' | 'rose' | 'brand' | 'slate'; label: string; detail: string };
-          const events: Ev[] = [
-            ...state.attempts.map((a) => ({ at: a.createdAt, tone: (a.weakConcepts.length ? 'rose' : 'emerald') as Ev['tone'], label: 'Assessment', detail: `${skillName(a.skillId)}: ${a.score}% → verified ${LEVEL_LABELS[a.verifiedLevel]}` })),
-            ...state.revisions.map((r) => ({ at: r.createdAt, tone: 'brand' as const, label: `Roadmap v${r.version}`, detail: `${ROLE_BY_ID[r.roleId]?.title}: ${r.trigger}${r.previous ? ` (readiness ${r.previous.readiness}% → ${r.snapshot.readiness}%)` : ''}` })),
-            ...Object.values(state.progress).filter((p) => p.status === 'done').map((p) => ({ at: p.updatedAt, tone: 'slate' as const, label: 'Milestone done', detail: `${milestoneLabel(p.key)} (claim, not yet verified)` })),
-          ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 8);
-          if (!events.length) return <p className="text-sm text-white/60">No activity yet — run your first skill analysis.</p>;
-          return (
-            <ol className="relative space-y-3 border-l border-white/10 pl-5">
-              {events.map((e, i) => (
-                <li key={i} className="relative">
-                  <span className="absolute -left-[25px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-neutral-950 bg-white" aria-hidden />
-                  <div className="flex flex-wrap items-center gap-2 text-sm"><Badge tone={e.tone}>{e.label}</Badge><span className="text-white/80">{e.detail}</span></div>
-                  <div className="text-xs text-white/60">{fmtDate(e.at)}</div>
-                </li>
-              ))}
-            </ol>
-          );
-        })()}
+      <Card>
+        <TabGroup>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <TabList className="flex flex-wrap gap-2" aria-label="Activity and insights">
+              <Tab className="rounded-full px-3 py-1 text-sm/6 font-semibold text-white/70 focus:outline-none data-hover:bg-white/5 data-selected:bg-white/10 data-selected:text-white data-focus:outline-1 data-focus:outline-white">Progress timeline</Tab>
+              <Tab className="rounded-full px-3 py-1 text-sm/6 font-semibold text-white/70 focus:outline-none data-hover:bg-white/5 data-selected:bg-white/10 data-selected:text-white data-focus:outline-1 data-focus:outline-white">What the agents concluded</Tab>
+            </TabList>
+            <Button variant="ghost" onClick={() => go('mentor')}>Ask Mira why →</Button>
+          </div>
+          <TabPanels>
+            <TabPanel>
+              <p className="mb-3 text-sm text-white/60">Everything that changed your plan, newest first.</p>
+            {(() => {
+              type Ev = { at: string; tone: 'emerald' | 'rose' | 'brand' | 'slate'; label: string; detail: string };
+              const events: Ev[] = [
+                ...state.attempts.map((a) => ({ at: a.createdAt, tone: (a.weakConcepts.length ? 'rose' : 'emerald') as Ev['tone'], label: 'Assessment', detail: `${skillName(a.skillId)}: ${a.score}% → verified ${LEVEL_LABELS[a.verifiedLevel]}` })),
+                ...state.revisions.map((r) => ({ at: r.createdAt, tone: 'brand' as const, label: `Roadmap v${r.version}`, detail: `${ROLE_BY_ID[r.roleId]?.title}: ${r.trigger}${r.previous ? ` (readiness ${r.previous.readiness}% → ${r.snapshot.readiness}%)` : ''}` })),
+                ...Object.values(state.progress).filter((p) => p.status === 'done').map((p) => ({ at: p.updatedAt, tone: 'slate' as const, label: 'Milestone done', detail: `${milestoneLabel(p.key)} (claim, not yet verified)` })),
+              ].sort((a, b) => b.at.localeCompare(a.at)).slice(0, 8);
+              if (!events.length) return <p className="text-sm text-white/60">No activity yet — run your first skill analysis.</p>;
+              return (
+                <ol className="relative space-y-3 border-l border-white/10 pl-5">
+                  {events.map((e, i) => (
+                    <li key={i} className="relative">
+                      <span className="absolute -left-[25px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-neutral-950 bg-white" aria-hidden />
+                      <div className="flex flex-wrap items-center gap-2 text-sm"><Badge tone={e.tone}>{e.label}</Badge><span className="text-white/80">{e.detail}</span></div>
+                      <div className="text-xs text-white/60">{fmtDate(e.at)}</div>
+                    </li>
+                  ))}
+                </ol>
+              );
+            })()}
+            </TabPanel>
+            <TabPanel>
+              {state.matching ? (
+                <>
+                  <p className="text-sm text-white/80">{state.matching.headline}</p>
+                  {state.insights?.summary && <p className="mt-2 text-sm text-white/60">{state.insights.summary}</p>}
+                  {roadmap && <p className="mt-3 border-t border-white/10 pt-3 text-xs text-white/60">Roadmap v{roadmap.version} · {roadmap.trigger}</p>}
+                </>
+              ) : <p className="text-sm text-white/60">Run a skill analysis to see the agents' conclusions.</p>}
+            </TabPanel>
+          </TabPanels>
+        </TabGroup>
       </Card>
-
-      {state.matching && (
-        <Card title="What the agents concluded" action={<Button variant="ghost" onClick={() => go('mentor')}>Ask Mira why →</Button>}>
-          <p className="text-sm text-white/80">{state.matching.headline}</p>
-          {state.insights?.summary && <p className="mt-2 text-sm text-white/60">{state.insights.summary}</p>}
-          {roadmap && <p className="mt-3 border-t border-white/10 pt-3 text-xs text-white/60">Roadmap v{roadmap.version} · {roadmap.trigger}</p>}
-        </Card>
-      )}
     </div>
   );
 }

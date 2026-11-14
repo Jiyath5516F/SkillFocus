@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { MentorMessage } from '../../../shared/types';
 import { useApp } from '../App';
 import { api } from '../api';
+import { Markdown } from '../components/Markdown';
 import { Badge, Button, Spinner, fmtTime } from '../components/ui';
 
 const SUGGESTIONS = [
@@ -46,7 +47,7 @@ export function Mentor() {
           <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${m.role === 'user' ? 'bg-brand-700 text-white' : m.kind === 'summary' ? 'border border-brand-100 bg-brand-50/60 text-slate-700' : 'bg-paper-deep text-slate-800'}`}>
               {m.kind === 'summary' && <div className="mb-1"><Badge tone="brand">Update from Mira</Badge></div>}
-              <div className="whitespace-pre-wrap">{m.content}</div>
+              {m.role === 'assistant' ? <Markdown text={m.content} /> : <div className="whitespace-pre-wrap">{m.content}</div>}
               <div className={`mt-1 text-[10px] ${m.role === 'user' ? 'text-white/70' : 'text-slate-500'}`}>{fmtTime(m.createdAt)}</div>
             </div>
           </div>

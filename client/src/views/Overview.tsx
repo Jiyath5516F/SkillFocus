@@ -34,7 +34,7 @@ export function Overview() {
                 <div>Last change: <Delta from={roadmap.previous.readiness} to={state.twin.readiness} suffix=" pts" /></div>
               )}
               <div className="text-slate-500">{state.twin.requirements.filter((r) => r.status === 'met').length} of {state.twin.requirements.length} requirements met</div>
-              <p className="text-xs text-slate-400">Estimate of skill coverage — not a hiring probability.</p>
+              <p className="text-xs text-slate-500">Estimate of skill coverage — not a hiring probability.</p>
             </div>
           </div>
         </Card>

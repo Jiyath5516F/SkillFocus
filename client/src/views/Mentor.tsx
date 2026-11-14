@@ -47,7 +47,7 @@ export function Mentor() {
             <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${m.role === 'user' ? 'bg-brand-700 text-white' : m.kind === 'summary' ? 'border border-brand-100 bg-brand-50/60 text-slate-700' : 'bg-stone-100 text-slate-800'}`}>
               {m.kind === 'summary' && <div className="mb-1"><Badge tone="brand">Update from Mira</Badge></div>}
               <div className="whitespace-pre-wrap">{m.content}</div>
-              <div className={`mt-1 text-[10px] ${m.role === 'user' ? 'text-white/70' : 'text-slate-400'}`}>{fmtTime(m.createdAt)}</div>
+              <div className={`mt-1 text-[10px] ${m.role === 'user' ? 'text-white/70' : 'text-slate-500'}`}>{fmtTime(m.createdAt)}</div>
             </div>
           </div>
         ))}

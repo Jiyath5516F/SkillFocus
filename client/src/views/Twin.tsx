@@ -162,7 +162,7 @@ export function Twin() {
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-slate-400">Switching keeps your evidence, assessments and earlier plans.</p>
+          <p className="mt-3 text-xs text-slate-500">Switching keeps your evidence, assessments and earlier plans.</p>
         </Card>
       </div>
 
@@ -190,7 +190,7 @@ export function Twin() {
               {state.insights.uncertainties.length > 0 && <div className="sm:col-span-2"><div className="mb-1 text-xs font-medium uppercase tracking-wide text-amber-700">Uncertain</div><ul className="space-y-1 text-slate-600">{state.insights.uncertainties.map((s, i) => <li key={i}>• {s}</li>)}</ul></div>}
             </div>
           ) : <p className="text-sm text-slate-500">Run a skill analysis from Overview.</p>}
-          {state.evidence.length > 0 && <p className="mt-3 text-xs text-slate-400">{state.evidence.length} evidence records · last {fmtDate(state.evidence[state.evidence.length - 1].createdAt)}</p>}
+          {state.evidence.length > 0 && <p className="mt-3 text-xs text-slate-500">{state.evidence.length} evidence records · last {fmtDate(state.evidence[state.evidence.length - 1].createdAt)}</p>}
         </Card>
       </div>
     </div>

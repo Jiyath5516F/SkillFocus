@@ -25,7 +25,7 @@ function StatusIcon({ s }: { s: AgentStep['status'] }) {
   if (s === 'running') return <Spinner className="text-brand-700" />;
   if (s === 'completed') return <span className="text-emerald-600" aria-label="completed">✓</span>;
   if (s === 'failed') return <span className="text-rose-600" aria-label="failed">✕</span>;
-  return <span className="text-slate-400">–</span>;
+  return <span className="text-slate-500">–</span>;
 }
 
 export function RunView({ run }: { run: AgentRun }) {
@@ -58,7 +58,7 @@ export function RunView({ run }: { run: AgentRun }) {
               </div>
               <KindBadge s={s} />
             </div>
-            <div className="mt-1 text-[11px] text-slate-400">
+            <div className="mt-1 text-[11px] text-slate-500">
               {fmtTime(s.startedAt)}{s.durationMs !== null ? ` · ${(s.durationMs / 1000).toFixed(1)}s` : ''}{s.tokensIn ? ` · ${s.tokensIn}→${s.tokensOut} tokens` : ''}
             </div>
             <p className="mt-1.5 text-xs text-slate-500"><span className="font-medium text-slate-600">In:</span> {s.inputSummary}</p>

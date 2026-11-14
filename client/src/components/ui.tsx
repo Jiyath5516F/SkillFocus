@@ -23,7 +23,7 @@ type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export function Button({ children, onClick, variant = 'primary', disabled, type = 'button', className = '', title }: { children: ReactNode; onClick?: () => void; variant?: BtnVariant; disabled?: boolean; type?: 'button' | 'submit'; className?: string; title?: string }) {
   const styles: Record<BtnVariant, string> = {
     primary: 'bg-brand-700 text-white hover:bg-brand-800 disabled:bg-slate-300',
-    secondary: 'border border-stone-300 bg-white text-slate-700 hover:bg-stone-50 disabled:text-slate-400',
+    secondary: 'border border-stone-300 bg-white text-slate-700 hover:bg-stone-50 disabled:text-slate-500',
     ghost: 'text-slate-600 hover:bg-stone-100 disabled:text-slate-300',
     danger: 'border border-rose-200 bg-white text-rose-700 hover:bg-rose-50',
   };
@@ -101,7 +101,7 @@ export function Empty({ title, children, action }: { title: string; children?: R
 
 export function Delta({ from, to, suffix = '' }: { from: number; to: number; suffix?: string }) {
   const d = Math.round((to - from) * 10) / 10;
-  if (d === 0) return <span className="text-slate-400">±0{suffix}</span>;
+  if (d === 0) return <span className="text-slate-500">±0{suffix}</span>;
   return <span className={d > 0 ? 'text-emerald-600' : 'text-rose-600'}>{d > 0 ? '▲' : '▼'} {Math.abs(d)}{suffix}</span>;
 }
 

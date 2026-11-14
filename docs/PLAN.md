@@ -1,5 +1,7 @@
 # Mira — Approved Implementation Plan
 
+> Historical planning document written before implementation. The README describes what was actually built; where they differ (e.g. the refusal-fallback beta was not used — refusals are handled as failed steps with the rule-based fallback), the README is authoritative.
+
 > **Product name:** Mira (repository: `SkillFocus`). Built for PromptWars × Rathinam Technical Campus.
 > **Hard deadline:** 1:30 PM IST. Feature freeze 1:00 PM IST. Plan approved 11:20 IST.
 > **Tagline:** *Mira sees what you really know — and aims you where you want to go.*

@@ -35,7 +35,7 @@ export function Roadmap() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Learning roadmap <span className="text-slate-400">v{rev.version}</span></h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Learning roadmap <span className="text-slate-500">v{rev.version}</span></h1>
           <p className="mt-1 text-sm text-slate-500">{rev.trigger} · {fmtDate(rev.createdAt)}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -63,7 +63,7 @@ export function Roadmap() {
             {rev.diff.moved.length > 0 && <Badge tone="amber">{rev.diff.moved.length} reordered</Badge>}
           </div>
         )}
-        <p className="mt-3 text-xs text-slate-400">Marking a milestone done records a <em>claim</em>; it counts as unverified until you pass an assessment.</p>
+        <p className="mt-3 text-xs text-slate-500">Marking a milestone done records a <em>claim</em>; it counts as unverified until you pass an assessment.</p>
       </Card>
 
       {!isCurrent && <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">You're viewing an earlier version (read-only).</div>}

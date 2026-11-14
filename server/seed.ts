@@ -18,9 +18,10 @@ export const DEMO_PROFILE: Profile = {
   weeklyHours: 8,
 };
 
-export function seedDemo(force = false) {
+/** Resets the current user's data to the official sample scenario (Python, SQL, basic HTML → Full Stack). */
+export function seedDemo(force = false, name = DEMO_PROFILE.name) {
   if (!force && getProfile()) return;
   resetAll();
-  saveProfile(DEMO_PROFILE);
-  addMessage('assistant', 'summary', "Hi Priya, I'm Mira. Run an analysis and my agent team will map your skills against your Full Stack Developer goal.");
+  saveProfile({ ...DEMO_PROFILE, name });
+  addMessage('assistant', 'summary', `Hi ${name.split(' ')[0]}, I'm Mira. Your profile starts with a sample scenario (Python, SQL, basic HTML) — edit it in Profile, or run an analysis and my agent team will map your skills against your Full Stack Developer goal.`);
 }

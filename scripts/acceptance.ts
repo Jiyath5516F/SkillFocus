@@ -12,8 +12,19 @@ const check = (ok: boolean, label: string, detail = '') => {
   if (!ok) failures++;
 };
 
+// Acceptance runs as its own account (created on first run), so it never touches other users' data.
+const ACCOUNT = { name: 'Acceptance Tester', email: process.env.MIRA_TEST_EMAIL ?? 'acceptance@mira.test', password: process.env.MIRA_TEST_PASSWORD ?? 'acceptance-pass-1' };
+let cookie = '';
+async function signIn() {
+  const post = (path: string, body: unknown) => fetch(`${API}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  let res = await post('/auth/login', ACCOUNT);
+  if (res.status === 401) res = await post('/auth/signup', ACCOUNT);
+  if (!res.ok) throw new Error(`sign-in failed: ${res.status} ${await res.text()}`);
+  cookie = (res.headers.get('set-cookie') ?? '').split(';')[0];
+}
+
 async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
-  const res = await fetch(`${API}${path}`, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const res = await fetch(`${API}${path}`, { method, headers: { 'Content-Type': 'application/json', Cookie: cookie }, body: body ? JSON.stringify(body) : undefined });
   const json = await res.json();
   if (!res.ok) throw new Error(`${method} ${path} → ${res.status}: ${JSON.stringify(json)}`);
   return json as T;
@@ -100,6 +111,7 @@ async function persist() {
 
 (async () => {
   try {
+    await signIn();
     if (process.argv.includes('persist')) await persist();
     else { await test1(); await test2(); await test3(); }
   } catch (e) {

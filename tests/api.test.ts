@@ -8,21 +8,66 @@ process.env.MIRA_DB_PATH = ':memory:';
 for (const k of ['SKILLFOCUS_ANTHROPIC_API_KEY', 'MIRA_ANTHROPIC_API_KEY', 'ANTHROPIC_API_KEY']) process.env[k] = '';
 
 const { app } = await import('../server/app');
-const { seedDemo } = await import('../server/seed');
 
 let base = '';
 let server: ReturnType<typeof app.listen>;
+let cookie = '';
+
+const call = async (path: string, method = 'GET', body?: unknown, auth: string | null = cookie) => {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (auth) headers.Cookie = auth;
+  const res = await fetch(base + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  return { status: res.status, headers: res.headers, json: (await res.json()) as any };
+};
+const sessionFrom = (headers: Headers) => (headers.get('set-cookie') ?? '').split(';')[0];
+
 before(async () => {
-  seedDemo(true);
   await new Promise<void>((r) => { server = app.listen(0, '127.0.0.1', () => r()); });
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`;
+  const r = await call('/auth/signup', 'POST', { name: 'Test Learner', email: 'test@example.com', password: 'secret-pass-1' }, null);
+  assert.equal(r.status, 201);
+  cookie = sessionFrom(r.headers);
 });
 after(() => server.close());
 
-const call = async (path: string, method = 'GET', body?: unknown) => {
-  const res = await fetch(base + path, { method, headers: { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
-  return { status: res.status, headers: res.headers, json: (await res.json()) as any };
-};
+describe('authentication & account isolation', () => {
+  it('requires a session for learner data', async () => {
+    assert.equal((await call('/state', 'GET', undefined, null)).status, 401);
+    assert.equal((await call('/state', 'GET', undefined, 'mira_session=forged-token')).status, 401);
+    assert.equal((await call('/health', 'GET', undefined, null)).status, 200);
+    assert.equal((await call('/auth/me', 'GET', undefined, null)).json.user, null);
+    assert.equal((await call('/auth/me')).json.user.email, 'test@example.com');
+  });
+  it('sets an HttpOnly, SameSite=Strict session cookie', async () => {
+    const r = await call('/auth/login', 'POST', { email: 'TEST@example.com', password: 'secret-pass-1' }, null);
+    assert.equal(r.status, 200);
+    const set = r.headers.get('set-cookie') ?? '';
+    assert.match(set, /HttpOnly/i);
+    assert.match(set, /SameSite=Strict/i);
+  });
+  it('rejects wrong passwords with a generic message, weak passwords and duplicate accounts', async () => {
+    const wrong = await call('/auth/login', 'POST', { email: 'test@example.com', password: 'nope-nope-1' }, null);
+    assert.equal(wrong.status, 401);
+    const unknown = await call('/auth/login', 'POST', { email: 'nobody@example.com', password: 'nope-nope-1' }, null);
+    assert.equal(unknown.json.error, wrong.json.error, 'no account enumeration');
+    assert.equal((await call('/auth/signup', 'POST', { name: 'X', email: 'weak@example.com', password: 'short' }, null)).status, 400);
+    assert.equal((await call('/auth/signup', 'POST', { name: 'X', email: 'test@example.com', password: 'secret-pass-1' }, null)).status, 409);
+  });
+  it("keeps each account's data separate", async () => {
+    const other = await call('/auth/signup', 'POST', { name: 'Other Person', email: 'other@example.com', password: 'another-pass-2' }, null);
+    const otherCookie = sessionFrom(other.headers);
+    const mine = (await call('/state')).json;
+    const theirs = (await call('/state', 'GET', undefined, otherCookie)).json;
+    assert.equal(mine.profile.name, 'Test Learner');
+    assert.equal(theirs.profile.name, 'Other Person');
+  });
+  it('logout invalidates the session server-side', async () => {
+    const r = await call('/auth/login', 'POST', { email: 'other@example.com', password: 'another-pass-2' }, null);
+    const c = sessionFrom(r.headers);
+    assert.equal((await call('/auth/logout', 'POST', {}, c)).status, 200);
+    assert.equal((await call('/state', 'GET', undefined, c)).status, 401);
+  });
+});
 
 describe('API validation & security', () => {
   it('reports AI as not configured and sets security headers', async () => {

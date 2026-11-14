@@ -12,6 +12,8 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
     throw new ApiError('Cannot reach the Mira server. Check that the API is running.');
   }
   const body = await res.json().catch(() => ({}));
+  // An expired or missing session anywhere in the app sends the user back to the sign-in page.
+  if (res.status === 401 && !path.startsWith('/auth/')) window.dispatchEvent(new Event('mira:signed-out'));
   if (!res.ok) throw new ApiError((body as { error?: string; details?: string[] }).error + ((body as { details?: string[] }).details ? `: ${(body as { details: string[] }).details.join('; ')}` : '') || `Request failed (${res.status})`);
   return body as T;
 }
@@ -25,7 +27,13 @@ export interface CohortReport {
 
 export interface Meta { roles: RoleDef[]; skills: SkillDef[]; resources: Resource[]; assessments: { id: string; skillId: string; title: string; questions: number }[] }
 
+export interface SessionUser { id: number; name: string; email: string }
+
 export const api = {
+  me: () => req<{ user: SessionUser | null }>('/auth/me'),
+  login: (email: string, password: string) => req<{ user: SessionUser }>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  signup: (name: string, email: string, password: string) => req<{ user: SessionUser }>('/auth/signup', { method: 'POST', body: JSON.stringify({ name, email, password }) }),
+  logout: () => req<{ ok: boolean }>('/auth/logout', { method: 'POST', body: '{}' }),
   meta: () => req<Meta>('/meta'),
   state: () => req<AppState>('/state'),
   analyze: () => req<{ runId: number }>('/analyze', { method: 'POST' }),

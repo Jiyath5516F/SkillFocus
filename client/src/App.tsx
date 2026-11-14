@@ -1,7 +1,7 @@
-import { ChatBubbleLeftRightIcon, ClipboardDocumentCheckIcon, CpuChipIcon, FingerPrintIcon, HomeIcon, MapIcon, UserCircleIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { ArrowRightStartOnRectangleIcon, ChatBubbleLeftRightIcon, ClipboardDocumentCheckIcon, CpuChipIcon, FingerPrintIcon, HomeIcon, MapIcon, UserCircleIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
 import type { AgentRun, AppState } from '../../shared/types';
-import { api, type Meta } from './api';
+import { api, type Meta, type SessionUser } from './api';
 import { AgentDrawer } from './components/AgentDrawer';
 import { FloatingMira } from './components/FloatingMira';
 import { MiraAvatar } from './components/MiraAvatar';
@@ -46,7 +46,7 @@ const viewFromHash = (): View => {
   return VIEWS.some((v) => v.id === h) ? h : 'overview';
 };
 
-export default function App() {
+export default function App({ user, onSignOut }: { user: SessionUser; onSignOut: () => void }) {
   const [state, setState] = useState<AppState | null>(null);
   const [meta, setMeta] = useState<Meta | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -147,12 +147,16 @@ export default function App() {
           </nav>
           <div className="hidden px-5 pt-6 lg:block">
             <div className="rounded-lg bg-white/5 p-3 text-xs text-white/70 ring-1 ring-white/10">
-              <div className="font-semibold text-white">{state.profile.name}</div>
+              <div className="truncate font-semibold text-white">{user.name}</div>
+              <div className="truncate text-white/60">{user.email}</div>
               <div>{state.profile.background}</div>
               <div className="mt-2 flex items-center gap-1.5">
                 <span className={`h-2 w-2 rounded-full ${state.aiConfigured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                 {state.aiConfigured ? 'AI agents online' : 'AI offline — rule-based mode'}
               </div>
+              <button onClick={onSignOut} className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md bg-white/5 px-2 py-1.5 text-xs font-semibold text-white/80 ring-1 ring-inset ring-white/10 hover:bg-white/10 hover:text-white">
+                <ArrowRightStartOnRectangleIcon aria-hidden className="size-4" /> Sign out
+              </button>
             </div>
           </div>
         </aside>
@@ -165,6 +169,7 @@ export default function App() {
               <Badge tone="brand">{state.twin.readiness}% ready (est.)</Badge>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="secondary" className="lg:hidden" onClick={onSignOut} title="Sign out"><ArrowRightStartOnRectangleIcon aria-hidden className="size-4" /><span className="sr-only">Sign out</span></Button>
               <Button variant="secondary" onClick={() => setDrawer(true)}>
                 {busy ? <><span className="pulse-dot h-2 w-2 rounded-full bg-indigo-400" /> Agents working…</> : <><CpuChipIcon aria-hidden className="size-4" /> Agent activity</>}
               </Button>

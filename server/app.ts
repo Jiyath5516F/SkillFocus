@@ -6,6 +6,9 @@ import { z } from 'zod';
 import { ROLES, ROLE_BY_ID, RESOURCES, SKILLS, SKILL_BY_ID } from '../shared/catalog';
 import type { MilestoneStatus } from '../shared/types';
 import { mentorReply } from './agents/mentor';
+import {
+  authenticate, clearSessionCookie, createSession, createUser, deleteSession, findUserByEmail, readSessionCookie, setSessionCookie, tooManyAttempts, userForSession, type User,
+} from './auth';
 import { cohortReport } from './cohort';
 import { ASSESSMENTS, ASSESSMENT_BY_ID, toPublic } from './assessments';
 import * as store from './db';
@@ -50,6 +53,59 @@ const RETAKE_COOLDOWN_MS = Number(process.env.MIRA_RETAKE_COOLDOWN_MIN ?? 10) * 
 const api = express.Router();
 
 api.get('/health', (_req, res) => res.json({ ok: true, aiConfigured, model: aiConfigured ? MODEL : null }));
+
+// ---- Accounts (public) ----
+const SignupSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required').max(80),
+  email: z.email('Enter a valid email address').max(254),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128)
+    .regex(/[A-Za-z]/, 'Password must contain a letter').regex(/[0-9]/, 'Password must contain a number'),
+});
+const LoginSchema = z.object({ email: z.string().trim().min(1).max(254), password: z.string().min(1).max(128) });
+const publicUser = (u: User) => ({ id: u.id, name: u.name, email: u.email });
+
+api.post('/auth/signup', (req, res) => {
+  const parsed = SignupSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Invalid sign-up details' });
+  if (tooManyAttempts([`signup:${req.ip}`], 10, 60 * 60_000)) return res.status(429).json({ error: 'Too many sign-ups from this network. Try again later.' });
+  if (findUserByEmail(parsed.data.email)) return res.status(409).json({ error: 'An account with this email already exists. Sign in instead.' });
+  const user = createUser(parsed.data.name, parsed.data.email, parsed.data.password);
+  store.runAsUser(user.id, () => seedDemo(true, user.name)); // starter profile so the full flow can be tried immediately
+  setSessionCookie(req, res, createSession(user.id), BASE);
+  res.status(201).json({ user: publicUser(user) });
+});
+
+api.post('/auth/login', (req, res) => {
+  const parsed = LoginSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Enter your email and password' });
+  if (tooManyAttempts([`login-ip:${req.ip}`, `login-email:${parsed.data.email.toLowerCase()}`])) {
+    return res.status(429).json({ error: 'Too many sign-in attempts. Please wait 15 minutes.' });
+  }
+  const user = authenticate(parsed.data.email, parsed.data.password);
+  if (!user) return res.status(401).json({ error: 'Incorrect email or password' }); // generic: no account enumeration
+  setSessionCookie(req, res, createSession(user.id), BASE);
+  res.json({ user: publicUser(user) });
+});
+
+api.post('/auth/logout', (req, res) => {
+  deleteSession(readSessionCookie(req));
+  clearSessionCookie(res, BASE);
+  res.json({ ok: true });
+});
+
+api.get('/auth/me', (req, res) => {
+  const user = userForSession(readSessionCookie(req));
+  res.json({ user: user ? publicUser(user) : null }); // 200 either way: "not signed in" is a normal state here
+});
+
+// ---- Everything below requires a valid session and runs against that user's own database ----
+api.use((req, res, next) => {
+  const user = userForSession(readSessionCookie(req));
+  if (!user) return res.status(401).json({ error: 'Please sign in' });
+  res.locals.user = user;
+  store.runAsUser(user.id, () => next());
+});
+
 api.get('/meta', (_req, res) => res.json({ roles: ROLES, skills: SKILLS, resources: RESOURCES, assessments: ASSESSMENTS.map((a) => ({ id: a.id, skillId: a.skillId, title: a.title, questions: a.questions.length })) }));
 api.get('/state', (_req, res) => res.json(buildState()));
 
@@ -194,7 +250,7 @@ api.post('/mentor', aiLimit, async (req, res) => {
 
 api.post('/demo/reset', (_req, res) => {
   if (store.activeRunId()) return res.status(409).json({ error: BUSY });
-  seedDemo(true);
+  seedDemo(true, (res.locals.user as User).name);
   res.json(buildState());
 });
 

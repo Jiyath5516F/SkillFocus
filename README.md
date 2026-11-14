@@ -109,7 +109,7 @@ The **Agent activity** drawer shows each run as it executes: agent, status, time
 
 ## Assumptions
 
-- A single-learner prototype with no authentication. A preloaded demo learner and a reset button keep the demo reproducible.
+- Each account is one learner. A new account starts with the official sample scenario (Python, SQL, basic HTML → Full Stack Developer) under the user's own name, which they can edit or reset, so the full flow can be tried immediately.
 - Role requirements are **illustrative benchmarks**, not universal hiring standards.
 - Skills use a 0–4 scale (None, Basic, Working, Proficient, Advanced).
 - Score bands map to levels: <20% → None, 20–39% → Basic, 40–69% → Working, 70–89% → Proficient, ≥90% → Advanced. Any concept scored below 50% is "weak". After an attempt the learner sees an answer review, so retakes of the same assessment have a cooldown (`MIRA_RETAKE_COOLDOWN_MIN`, default 10 minutes), and a new attempt resets that skill's remediation progress.
@@ -139,8 +139,9 @@ Production: `npm run build && npm start`, which serves the built client and the 
 ## Testing
 
 ```bash
-npm test             # 36 unit + API tests: engine, grading, roadmap assembly, AI-output validation,
-                     # input validation, security headers, cohort analytics, and the no-AI rule-based fallback
+npm test             # 41 unit + API tests: engine, grading, roadmap assembly, AI-output validation,
+                     # authentication, account isolation, input validation, security headers, cohort analytics,
+                     # and the no-AI rule-based fallback
 npm run acceptance   # 3 end-to-end acceptance tests against a running server (real agent runs)
 npm run check        # typecheck + unit tests + production build
 ```
@@ -152,6 +153,14 @@ The acceptance tests cover the three required scenarios:
 3. **Career change → persistence.** A Data Analyst plan is created while the Full Stack history, the attempts and the certifications/projects are all kept; `npm run acceptance -- persist` re-checks after a server restart.
 
 ## Security
+
+**Accounts and sessions**
+- **Sign up and sign in** pages. Passwords need at least 8 characters with a letter and a number. They are hashed with **scrypt** (Node `crypto`, a random 16-byte salt per user) and verified with `timingSafeEqual`.
+- **Sessions** use a random 256-bit token in an `HttpOnly`, `SameSite=Strict` cookie (also `Secure` over HTTPS behind the proxy) that expires after 7 days. Only the token's SHA-256 hash is stored. Sign out deletes the session on the server.
+- **Per-account isolation:** each account has its own SQLite database file, selected per request through `AsyncLocalStorage`, so a request can only reach its own learner's data. Every API route except `/health` and `/auth/*` requires a valid session.
+- **Brute-force and enumeration protection:** sign-in is rate-limited per IP and per email (10 attempts per 15 minutes) and sign-up per IP. Failed sign-ins return one generic message and always run one scrypt computation, so neither the message nor the timing reveals whether an account exists.
+
+**Application**
 
 - The API key lives only on the server, loaded from `.env` or the environment, and is never logged. `.env` is git-ignored.
 - **Input validation:** every input is checked with zod (profile, goal, answers, milestone status, chat). The JSON body limit is 100 kB and skill entries are de-duplicated.
@@ -196,6 +205,6 @@ deploy/   systemd, nginx, Caddy, deploy script        docs/  plan & demo script
 
 ## Known limitations
 
-- Single learner, no authentication or multi-tenant admin dashboard yet.
+- No password reset or email verification yet; there is no admin role, so Cohort insights uses a labelled sample cohort plus the signed-in learner.
 - Three assessment banks so far (JavaScript, SQL, Python). Other skills rely on self-reports, claims or evidence until assessed.
 - An agent run takes about 20–40 s with real model calls; the live activity drawer shows progress while it runs.

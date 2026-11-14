@@ -145,3 +145,11 @@ export const RESOURCES: Resource[] = [
 export const RESOURCE_BY_ID: Record<string, Resource> = Object.fromEntries(RESOURCES.map((r) => [r.id, r]));
 
 export const skillName = (id: string) => SKILL_BY_ID[id]?.name ?? id;
+
+/** Human-readable label for a stable milestone key (learn:<skill> | fix:<skill>:<concept>). */
+export function milestoneLabel(key: string): string {
+  const [kind, skill, concept] = key.split(':');
+  if (kind === 'learn') return `Learn ${skillName(skill)}`;
+  if (kind === 'fix') return `${skillName(skill)} remediation (${concept.replace(/_/g, ' ')})`;
+  return key;
+}

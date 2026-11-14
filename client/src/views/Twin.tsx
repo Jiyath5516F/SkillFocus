@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { LEVEL_LABELS, ROLE_BY_ID, skillName } from '../../../shared/catalog';
+import { LEVEL_LABELS, ROLE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
 import { computeTwin, estimateSkill } from '../../../shared/engine';
 import { useApp } from '../App';
 import { api } from '../api';
@@ -89,7 +89,7 @@ export function Twin() {
           </div>
           <div className="mt-4 flex flex-wrap gap-2 text-sm">
             {rev.diff.added.map((k) => <Badge key={k} tone="emerald">+ {rev.milestones.find((m) => m.key === k)?.title ?? k}</Badge>)}
-            {rev.diff.removed.map((k) => <Badge key={k} tone="rose">− {k}</Badge>)}
+            {rev.diff.removed.map((k) => <Badge key={k} tone="rose">− {milestoneLabel(k)}</Badge>)}
             {rev.diff.moved.length > 0 && <Badge tone="amber">{rev.diff.moved.length} reordered</Badge>}
           </div>
           <p className="mt-3 text-sm text-slate-600">{rev.changeSummary}</p>

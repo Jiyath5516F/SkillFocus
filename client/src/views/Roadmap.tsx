@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LEVEL_LABELS, RESOURCE_BY_ID, skillName } from '../../../shared/catalog';
+import { LEVEL_LABELS, RESOURCE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
 import type { MilestoneStatus } from '../../../shared/types';
 import { useApp } from '../App';
 import { api } from '../api';
@@ -59,7 +59,7 @@ export function Roadmap() {
           <div className="mt-3 flex flex-wrap gap-2 border-t border-stone-100 pt-3 text-xs">
             <span className="text-slate-500">Changes vs v{rev.version - 1}:</span>
             {rev.diff.added.length > 0 && <Badge tone="emerald">{rev.diff.added.length} added</Badge>}
-            {rev.diff.removed.length > 0 && <Badge tone="rose">{rev.diff.removed.length} removed ({rev.diff.removed.join(', ')})</Badge>}
+            {rev.diff.removed.length > 0 && <Badge tone="rose">{rev.diff.removed.length} removed: {rev.diff.removed.map(milestoneLabel).join(', ')}</Badge>}
             {rev.diff.moved.length > 0 && <Badge tone="amber">{rev.diff.moved.length} reordered</Badge>}
           </div>
         )}

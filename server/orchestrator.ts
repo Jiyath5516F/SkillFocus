@@ -1,7 +1,7 @@
 // Orchestrator: coordinates specialised agents per event, records every step (LLM vs deterministic vs fallback).
 import { ROLE_BY_ID, skillName } from '../shared/catalog';
 import { computeTwin, diffMilestones } from '../shared/engine';
-import type { AgentRun, AssessmentAttempt } from '../shared/types';
+import type { AssessmentAttempt, RevisionSnapshot, TwinResult } from '../shared/types';
 import { runAssessmentAgent } from './agents/assessmentAgent';
 import { runCareerMatching, sanitizeMatching } from './agents/careerMatching';
 import { mentorSummary } from './agents/mentor';
@@ -14,6 +14,17 @@ import { assemble, buildSlots } from './roadmap';
 import { mentorSnapshot } from './state';
 
 export class BusyError extends Error {}
+
+/** Compact readiness snapshot stored with each roadmap revision for before/after comparison. */
+export function snapshotOf(twin: TwinResult): RevisionSnapshot {
+  return { readiness: twin.readiness, levels: Object.fromEntries(twin.requirements.map((r) => [r.skillId, r.effective])) };
+}
+
+/** The learner's current Career Twin snapshot for their target role. */
+export function currentSnapshot(): RevisionSnapshot {
+  const profile = store.getProfile()!;
+  return snapshotOf(computeTwin(profile, store.listEvidence(), profile.targetRoleId));
+}
 
 const clip = (s: string, n = 280) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
@@ -67,11 +78,19 @@ function launch(trigger: string, work: (ctx: RunCtx) => Promise<void>): number {
   return runId;
 }
 
-interface PlanOpts { trigger: string; skillIntel: 'full' | 'reassess' | 'none'; diagnosis?: string | null; event: string }
+interface PlanOpts {
+  trigger: string;
+  skillIntel: 'full' | 'reassess' | 'none';
+  diagnosis?: string | null;
+  event: string;
+  /** State right before the triggering event; defaults to the state when the run starts. */
+  before?: RevisionSnapshot | null;
+}
 
 async function planFlow(ctx: RunCtx, o: PlanOpts) {
   let profile = store.getProfile()!;
   const attempts = store.listAttempts();
+  const before = o.before === undefined ? currentSnapshot() : o.before;
 
   // 1) Skill Intelligence Agent
   if (o.skillIntel !== 'none') {
@@ -124,8 +143,8 @@ async function planFlow(ctx: RunCtx, o: PlanOpts) {
     version: (prev?.version ?? 0) + 1,
     trigger: o.trigger,
     milestones,
-    snapshot: { readiness: twin.readiness, levels: Object.fromEntries(twin.requirements.map((r) => [r.skillId, r.effective])) },
-    previous: prev?.snapshot ?? null,
+    snapshot: snapshotOf(twin),
+    previous: before,
     diff,
     changeSummary: path?.changeSummary?.slice(0, 400) ?? `Rule-based roadmap (${o.trigger}).${diff ? ` Added ${diff.added.length}, removed ${diff.removed.length}.` : ''}`,
     createdAt: store.now(),
@@ -146,11 +165,12 @@ export function startAnalyze(trigger: 'analyze' | 'profile_updated'): number {
 export function startGoalChange(fromRole: string, toRole: string): number {
   return launch('goal_change', (ctx) => planFlow(ctx, {
     trigger: `Career goal changed: ${ROLE_BY_ID[fromRole]?.title ?? fromRole} → ${ROLE_BY_ID[toRole].title}`, skillIntel: 'none',
+    before: store.latestRevision(toRole)?.snapshot ?? null, // compare with the last plan for this role, if any
     event: `The learner changed their career goal from ${ROLE_BY_ID[fromRole]?.title ?? fromRole} to ${ROLE_BY_ID[toRole].title}. Earlier history is preserved.`,
   }));
 }
 
-export function startAssessmentRun(def: AssessmentDef, attempt: AssessmentAttempt, gradingMs: number, requiredLevel: number): number {
+export function startAssessmentRun(def: AssessmentDef, attempt: AssessmentAttempt, gradingMs: number, requiredLevel: number, before: RevisionSnapshot): number {
   return launch('assessment', async (ctx) => {
     const sid = store.startStep(ctx.runId, 'Assessment & Progress', 'deterministic', null, `Grade ${attempt.total} answers against the answer key`);
     store.endStep(sid, { status: 'completed', durationMs: gradingMs, outputSummary: `Score ${attempt.score}% (${attempt.correct}/${attempt.total}) → verified level ${attempt.verifiedLevel} (role needs ${requiredLevel}) · weak: ${attempt.weakConcepts.join(', ') || 'none'}` });
@@ -167,10 +187,10 @@ export function startAssessmentRun(def: AssessmentDef, attempt: AssessmentAttemp
         ? `Assessment #${attempt.id} (${def.title}) scored ${attempt.score}% — below the required level; targeted remediation added`
         : `Assessment #${attempt.id} (${def.title}) scored ${attempt.score}% — skill verified`,
       skillIntel: 'reassess',
+      before,
       diagnosis: diag ? `${diag.diagnosis} Focus: ${diag.focus}` : `Weak concepts: ${attempt.weakConcepts.join(', ')}`,
       event: `The learner completed the ${def.title} assessment: ${attempt.correct}/${attempt.total} (${attempt.score}%), verified level ${attempt.verifiedLevel} vs required ${requiredLevel}. Weak concepts: ${attempt.weakConcepts.join(', ') || 'none'}.`,
     });
   });
 }
 
-export type { AgentRun };

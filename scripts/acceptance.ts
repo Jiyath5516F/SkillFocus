@@ -71,7 +71,8 @@ async function test2() {
   const keys = s.roadmap!.milestones.map((m) => m.key);
   const fixIdx = keys.findIndex((k) => k.startsWith('fix:javascript:'));
   check(s.roadmap!.version === 2 && fixIdx >= 0 && fixIdx < keys.indexOf('learn:react'), 'roadmap v2 inserts remediation before React', keys.join(', '));
-  check((s.roadmap!.diff?.added.length ?? 0) > 0 && s.roadmap!.previous !== null, 'revision diff and before-snapshot recorded', `added ${s.roadmap!.diff?.added.length}`);
+  check((s.roadmap!.diff?.added.length ?? 0) > 0, 'revision diff recorded', `added ${s.roadmap!.diff?.added.length}`);
+  check(s.roadmap!.previous?.readiness === after.twin.readiness && s.roadmap!.snapshot.readiness === s.twin.readiness, 'Career Twin before/after shows the drop', `${s.roadmap!.previous?.readiness}% → ${s.roadmap!.snapshot.readiness}%`);
   check(s.attempts.some((a) => a.id === sub.attempt.id && a.score === 25), 'attempt saved');
   const reply = await ask('Why did my roadmap change?');
   check(/25|2\/8|2 of 8|two of|assessment|quiz/i.test(reply), 'Mira cites the actual assessment', reply.slice(0, 110).replace(/\n/g, ' '));

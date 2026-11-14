@@ -38,7 +38,7 @@ export function mentorSnapshot() {
     matching: s.matching,
     currentRoadmap: s.roadmap && {
       version: s.roadmap.version, trigger: s.roadmap.trigger, changeSummary: s.roadmap.changeSummary,
-      readinessAtCreation: s.roadmap.snapshot.readiness, previousReadiness: s.roadmap.previous?.readiness ?? null, diff: s.roadmap.diff,
+      readinessAfterThisChange: s.roadmap.snapshot.readiness, readinessBeforeThisChange: s.roadmap.previous?.readiness ?? null, skillLevelsBefore: s.roadmap.previous?.levels ?? null, diff: s.roadmap.diff,
       milestones: s.roadmap.milestones.map((m) => ({ key: m.key, title: m.title, kind: m.kind, status: s.progress[m.key]?.status ?? 'todo', reason: m.reason })),
     },
     previousRoadmapVersions: prevForRole.slice(1, 4).map((r) => ({ version: r.version, trigger: r.trigger, readiness: r.snapshot.readiness, milestoneKeys: r.milestones.map((m) => m.key) })),

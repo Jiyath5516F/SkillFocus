@@ -10,7 +10,7 @@ import { ASSESSMENTS, ASSESSMENT_BY_ID, toPublic } from './assessments';
 import * as store from './db';
 import { countAnswered, grade } from './grading';
 import { aiConfigured, describeError, MODEL } from './llm';
-import { BusyError, startAnalyze, startAssessmentRun, startGoalChange } from './orchestrator';
+import { BusyError, currentSnapshot, startAnalyze, startAssessmentRun, startGoalChange } from './orchestrator';
 import { seedDemo } from './seed';
 import { buildState, mentorSnapshot } from './state';
 
@@ -115,6 +115,7 @@ api.post('/assessments/:id/submit', aiLimit, (req, res) => {
   if (answered < def.questions.length) return res.status(400).json({ error: `Please answer all ${def.questions.length} questions (${answered} answered).` });
   if (store.activeRunId()) return res.status(409).json({ error: 'Agents are busy with a previous request. Please wait a moment.' });
 
+  const before = currentSnapshot(); // Career Twin state just before this result is applied
   const t0 = Date.now();
   const g = grade(def, answers); // deterministic, against the answer key
   const profile = store.getProfile()!;
@@ -123,7 +124,7 @@ api.post('/assessments/:id/submit', aiLimit, (req, res) => {
   store.addEvidence({ skillId: def.skillId, source: 'assessment', level: g.verifiedLevel, detail: `${def.title} attempt #${attempt.id}: ${g.score}%`, refId: `attempt:${attempt.id}` });
   const gradingMs = Date.now() - t0;
   try {
-    res.json({ attempt, runId: startAssessmentRun(def, attempt, gradingMs, requiredLevel) });
+    res.json({ attempt, runId: startAssessmentRun(def, attempt, gradingMs, requiredLevel, before) });
   } catch (e) { sendErr(res, e); }
 });
 

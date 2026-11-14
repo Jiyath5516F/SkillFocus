@@ -123,27 +123,27 @@ export default function App() {
     <AppCtx.Provider value={ctx}>
       <a href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }} className="sr-only z-50 rounded bg-white px-3 py-2 text-sm text-brand-800 shadow focus:not-sr-only focus:fixed focus:top-2 focus:left-2">Skip to content</a>
       <div className="min-h-screen lg:flex">
-        <aside className="bg-ink text-white lg:fixed lg:inset-y-0 lg:w-60">
+        <aside className="border-b border-gray-200 bg-white lg:fixed lg:inset-y-0 lg:w-64 lg:border-r lg:border-b-0">
           <div className="flex items-center justify-between px-5 py-4 lg:block">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-marigold font-display text-lg font-semibold text-ink" aria-hidden>M</div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-base font-bold text-white" aria-hidden>M</div>
               <div>
-                <div className="font-display text-xl font-medium leading-tight text-white">Mira</div>
-                <div className="text-[11px] leading-tight text-white/60">Career learning, proven</div>
+                <div className="text-lg font-semibold leading-tight text-gray-900">Mira</div>
+                <div className="text-xs leading-tight text-gray-500">Career learning, proven</div>
               </div>
             </div>
           </div>
           <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:pb-0" aria-label="Main">
             {VIEWS.map((v) => (
               <button key={v.id} onClick={() => go(v.id)} aria-current={view === v.id ? 'page' : undefined}
-                className={`shrink-0 border-l-2 px-3 py-2 text-left text-sm font-medium transition-colors ${view === v.id ? 'border-marigold bg-white/10 text-white' : 'border-transparent text-white/70 hover:bg-white/5 hover:text-white'}`}>
+                className={`shrink-0 rounded-md px-3 py-2 text-left text-sm font-semibold transition-colors ${view === v.id ? 'bg-gray-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'}`}>
                 {v.label}
               </button>
             ))}
           </nav>
           <div className="hidden px-5 pt-6 lg:block">
-            <div className="rounded-md border border-white/15 bg-white/5 p-3 text-xs text-white/70">
-              <div className="font-medium text-white">{state.profile.name}</div>
+            <div className="rounded-lg bg-gray-50 p-3 text-xs text-gray-600 ring-1 ring-gray-900/5">
+              <div className="font-semibold text-gray-900">{state.profile.name}</div>
               <div>{state.profile.background}</div>
               <div className="mt-2 flex items-center gap-1.5">
                 <span className={`h-2 w-2 rounded-full ${state.aiConfigured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
@@ -153,8 +153,8 @@ export default function App() {
           </div>
         </aside>
 
-        <div className="flex-1 lg:pl-60">
-          <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-line bg-paper/90 px-4 py-3 backdrop-blur sm:px-8">
+        <div className="flex-1 lg:pl-64">
+          <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white/90 px-4 py-3 backdrop-blur sm:px-8">
             <div className="flex min-w-0 items-center gap-2 text-sm">
               <span className="text-slate-500">Goal</span>
               <span className="font-semibold text-slate-900">{role.title}</span>

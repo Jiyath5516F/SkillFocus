@@ -97,7 +97,7 @@ export function AgentDrawer({ open, onClose, activeRun, refreshKey }: { open: bo
       <DialogPanel transition className="flex w-full flex-col border-l border-line bg-paper shadow-xl transition-transform duration-200 ease-out data-closed:translate-x-full">
         <div className="flex items-center justify-between border-b border-line bg-white px-5 py-4">
           <div>
-            <DialogTitle className="font-display text-lg font-medium text-ink">Agent activity</DialogTitle>
+            <DialogTitle className="text-base font-semibold text-gray-900">Agent activity</DialogTitle>
             <p className="text-xs text-slate-500">Real executions, recorded by the orchestrator</p>
           </div>
           <button onClick={onClose} className="rounded-md px-2 py-1 text-slate-500 hover:bg-paper-deep" aria-label="Close agent activity">✕</button>

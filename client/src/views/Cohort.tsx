@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ROLE_BY_ID, skillName } from '../../../shared/catalog';
 import { useApp } from '../App';
 import { api, type CohortReport } from '../api';
+import { SelectMenu } from '../components/hui';
 import { Badge, Card, Spinner } from '../components/ui';
 
 /** Institution view: where a cohort's verified and unverified skill gaps are, ranked by readiness impact. */
@@ -21,21 +22,16 @@ export function Cohort() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Cohort insights</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Cohort insights</h1>
           <p className="mt-1 max-w-3xl text-sm text-slate-500">
             For universities and employers: which skills a group actually lacks, how much of it is <em>proven</em>, and where training would move readiness most.
           </p>
         </div>
-        <label className="text-sm">
-          <span className="sr-only">Target role</span>
-          <select className="rounded-lg border border-line-strong bg-card px-3 py-2 text-sm" value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="all">All target roles</option>
-            {meta.roles.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}
-          </select>
-        </label>
+        <SelectMenu label="Target role" srOnlyLabel className="w-56" value={role} onChange={setRole}
+          options={[{ value: 'all', label: 'All target roles' }, ...meta.roles.map((r) => ({ value: r.id, label: r.title }))]} />
       </div>
 
-      <div className="rounded-lg border border-marigold/40 bg-marigold-soft px-4 py-2 text-sm text-[#7a4a0c]">
+      <div className="rounded-lg border border-marigold/40 bg-marigold-soft px-4 py-2 text-sm text-indigo-700">
         Illustrative sample cohort of 12 learners (not real people) plus your own live profile. All numbers use the same deterministic engine as Career Twin.
       </div>
 
@@ -50,7 +46,7 @@ export function Cohort() {
             ].map(([k, v]) => (
               <div key={k} className="rounded-lg border border-line bg-card p-4">
                 <div className="text-xs text-slate-500">{k}</div>
-                <div className="mt-1 font-display text-2xl font-medium text-ink">{v}</div>
+                <div className="mt-1 text-2xl font-semibold tracking-tight text-gray-900">{v}</div>
               </div>
             ))}
           </div>

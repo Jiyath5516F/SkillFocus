@@ -3,10 +3,11 @@ import { LEVEL_LABELS, RESOURCE_BY_ID, milestoneLabel, skillName } from '../../.
 import type { MilestoneStatus } from '../../../shared/types';
 import { useApp } from '../App';
 import { api } from '../api';
+import { SelectMenu, Segmented } from '../components/hui';
 import { Badge, Button, Card, Empty, fmtDate } from '../components/ui';
 
-const STATUS: { id: MilestoneStatus; label: string }[] = [
-  { id: 'todo', label: 'To do' }, { id: 'in_progress', label: 'In progress' }, { id: 'done', label: 'Done' },
+const STATUS: { value: MilestoneStatus; label: string }[] = [
+  { value: 'todo', label: 'To do' }, { value: 'in_progress', label: 'In progress' }, { value: 'done', label: 'Done' },
 ];
 
 export function Roadmap() {
@@ -35,14 +36,13 @@ export function Roadmap() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Learning roadmap <span className="text-slate-500">v{rev.version}</span></h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Learning roadmap <span className="text-slate-500">v{rev.version}</span></h1>
           <p className="mt-1 text-sm text-slate-500">{rev.trigger} · {fmtDate(rev.createdAt)}</p>
         </div>
         <div className="flex items-center gap-2">
           {forRole.length > 1 && (
-            <select aria-label="Roadmap version" className="rounded-lg border border-line-strong bg-white px-2 py-2 text-sm" value={rev.id} onChange={(e) => setViewId(Number(e.target.value))}>
-              {forRole.map((r) => <option key={r.id} value={r.id}>v{r.version}{r.id === state.roadmap?.id ? ' (current)' : ''}</option>)}
-            </select>
+            <SelectMenu label="Roadmap version" srOnlyLabel className="w-40" value={rev.id} onChange={(id: number) => setViewId(id)}
+              options={forRole.map((r) => ({ value: r.id, label: `v${r.version}${r.id === state.roadmap?.id ? ' (current)' : ''}` }))} />
           )}
           <Button variant="secondary" onClick={regenerate} disabled={busy}>{busy ? 'Agents working…' : 'Re-analyze'}</Button>
         </div>
@@ -88,14 +88,7 @@ export function Roadmap() {
                   </div>
                 </div>
                 {isCurrent && (
-                  <div className="flex shrink-0 rounded-lg border border-line p-0.5" role="group" aria-label={`Status for ${m.title}`}>
-                    {STATUS.map((s) => (
-                      <button key={s.id} disabled={saving === m.key} onClick={() => setStatus(m.key, s.id)} aria-pressed={status === s.id}
-                        className={`rounded-md px-2.5 py-1 text-xs font-medium ${status === s.id ? (s.id === 'done' ? 'bg-emerald-700 text-white' : 'bg-slate-800 text-white') : 'text-slate-600 hover:bg-paper-deep'}`}>
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
+                  <Segmented label={`Status for ${m.title}`} value={status} options={STATUS} disabled={saving === m.key} onChange={(v) => setStatus(m.key, v)} />
                 )}
               </div>
               <div className="mt-4 grid gap-4 pl-10 md:grid-cols-2">

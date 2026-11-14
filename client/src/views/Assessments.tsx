@@ -34,7 +34,7 @@ export function Assessments() {
     const req = role.requirements.find((r) => r.skillId === quiz.skillId)?.level;
     return (
       <div className="space-y-6">
-        <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">{quiz.title} — result</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">{quiz.title} — result</h1>
         <div className="grid gap-4 lg:grid-cols-3">
           <Card title="Score" subtitle="Graded deterministically against the answer key">
             <div className="text-4xl font-semibold tabular-nums text-slate-900">{latestFull.score}%</div>
@@ -89,7 +89,7 @@ export function Assessments() {
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">{quiz.title}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">{quiz.title}</h1>
             <p className="mt-1 text-sm text-slate-500">{quiz.questions.length} questions · {skillName(quiz.skillId)} · answers are graded against a fixed key</p>
           </div>
           <Button variant="ghost" onClick={() => setQuiz(null)}>Cancel</Button>
@@ -128,7 +128,7 @@ export function Assessments() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Assessments</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Assessments</h1>
         <p className="mt-1 text-sm text-slate-500">Short, objective checks. A result replaces self-reported levels and claims made before it, and weak concepts trigger targeted remediation.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">

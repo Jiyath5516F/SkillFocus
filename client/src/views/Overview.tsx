@@ -21,7 +21,7 @@ export function Overview() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Hi {state.profile.name.split(' ')[0]} — here's where you stand</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Hi {state.profile.name.split(' ')[0]} — here's where you stand</h1>
         <p className="mt-1 text-sm text-slate-500">Target: {role.title}. Every number below is computed from evidence you can inspect in Career Twin.</p>
       </div>
 

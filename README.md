@@ -170,7 +170,7 @@ The acceptance tests cover the three required scenarios:
 
 ## Accessibility
 
-- **Headless UI** provides the accessible behaviour for interactive primitives: the Agent activity panel is a modal `Dialog` (focus trap, Escape, `aria-modal`, scroll lock) and quiz answers use `RadioGroup` (roving focus, arrow keys). Mira's own design tokens style them, so the behaviour is standard and the look is distinctive.
+- **Headless UI** provides the accessible behaviour for interactive primitives: the Agent activity panel is a modal `Dialog` (focus trap, Escape, `aria-modal`, scroll lock) and quiz answers use `RadioGroup` (roving focus, arrow keys). They are styled in the Tailwind/headlessui.com look (Inter, gray neutrals, indigo accent): `Dialog`, `RadioGroup`, `Listbox`, `Disclosure`, `Checkbox`, `Field`/`Input`/`Textarea`.
 - Semantic landmarks, a skip-to-content link, and visible focus rings.
 - Labelled form controls; radio-group quizzes; `aria-pressed` on milestone status buttons; a live region in the chat.
 - Respects `prefers-reduced-motion`.

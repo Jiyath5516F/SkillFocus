@@ -3,15 +3,16 @@ import { LEVEL_LABELS, SKILLS, skillName } from '../../../shared/catalog';
 import type { Profile } from '../../../shared/types';
 import { useApp } from '../App';
 import { api } from '../api';
+import { ConfirmDialog, SelectMenu, TextAreaField, TextField } from '../components/hui';
 import { Badge, Button, Card } from '../components/ui';
 
-const input = 'w-full rounded-lg border border-line-strong bg-white px-3 py-2 text-sm focus:border-brand-600 focus:outline-none';
+const LEVEL_OPTIONS = LEVEL_LABELS.slice(1).map((label, i) => ({ value: i + 1, label }));
 
 export function ProfileView() {
   const { state, meta, track, busy, notify, setState } = useApp();
   const [p, setP] = useState<Profile>(state.profile);
-  const [newSkill, setNewSkill] = useState('');
   const [saving, setSaving] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   useEffect(() => setP(state.profile), [state.profile]);
 
   const dirty = JSON.stringify(p) !== JSON.stringify(state.profile);
@@ -23,17 +24,16 @@ export function ProfileView() {
     try { track((await api.changeGoal(roleId)).runId); } catch (e) { notify((e as Error).message); }
   };
   const reset = async () => {
-    if (!window.confirm('Reset to the demo learner? This clears all progress, assessments and plans.')) return;
     try { setState(await api.reset()); notify('Demo learner restored.', 'info'); } catch (e) { notify((e as Error).message); }
   };
-
-  const available = SKILLS.filter((s) => !p.skills.some((x) => x.skillId === s.id));
+  const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setP({ ...p, [k]: v });
+  const available = SKILLS.filter((s) => !p.skills.some((x) => x.skillId === s.id)).map((s) => ({ value: s.id, label: s.name }));
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Profile</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Profile</h1>
           <p className="mt-1 text-sm text-slate-500">Saving re-runs the agent team. Self-reported levels are treated as claims until evidence or an assessment backs them.</p>
         </div>
         <Button onClick={save} disabled={!dirty || saving || busy}>{busy ? 'Agents working…' : dirty ? 'Save & re-analyze' : 'Saved'}</Button>
@@ -41,86 +41,90 @@ export function ProfileView() {
 
       <Card title="Career goal" subtitle="Switching keeps all certifications, projects, assessments and previous plans">
         <div className="grid gap-3 md:grid-cols-3">
-          {meta.roles.map((r) => (
-            <div key={r.id} className={`rounded-lg border p-4 ${r.id === state.profile.targetRoleId ? 'border-brand-600 bg-brand-50/50' : 'border-line'}`}>
-              <div className="flex items-center justify-between gap-2"><span className="font-medium text-slate-900">{r.title}</span>{r.id === state.profile.targetRoleId && <Badge tone="brand">current</Badge>}</div>
-              <p className="mt-1 text-xs text-slate-500">{r.summary}</p>
-              <p className="mt-2 text-xs text-slate-500">Needs: {r.requirements.map((q) => skillName(q.skillId)).join(', ')}</p>
-              {r.id !== state.profile.targetRoleId && <Button variant="secondary" className="mt-3" disabled={busy || dirty} title={dirty ? 'Save profile changes first' : undefined} onClick={() => changeGoal(r.id)}>Make this my goal</Button>}
-            </div>
-          ))}
+          {meta.roles.map((r) => {
+            const current = r.id === state.profile.targetRoleId;
+            return (
+              <div key={r.id} className={`rounded-lg p-4 ring-1 ${current ? 'bg-indigo-50/50 ring-2 ring-indigo-600' : 'ring-gray-200'}`}>
+                <div className="flex items-center justify-between gap-2"><span className="font-semibold text-gray-900">{r.title}</span>{current && <Badge tone="brand">current</Badge>}</div>
+                <p className="mt-1 text-xs text-slate-500">{r.summary}</p>
+                <p className="mt-2 text-xs text-slate-500">Needs: {r.requirements.map((q) => skillName(q.skillId)).join(', ')}</p>
+                {!current && <Button variant="secondary" className="mt-3" disabled={busy || dirty} title={dirty ? 'Save profile changes first' : undefined} onClick={() => changeGoal(r.id)}>Make this my goal</Button>}
+              </div>
+            );
+          })}
         </div>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title="About you">
-          <div className="grid gap-3">
-            <label className="text-sm"><span className="mb-1 block text-slate-600">Name</span><input className={input} value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} /></label>
-            <label className="text-sm"><span className="mb-1 block text-slate-600">Background / education</span><input className={input} value={p.background} onChange={(e) => setP({ ...p, background: e.target.value })} /></label>
-            <label className="text-sm"><span className="mb-1 block text-slate-600">Current role</span><input className={input} value={p.currentRole} onChange={(e) => setP({ ...p, currentRole: e.target.value })} /></label>
-            <label className="text-sm"><span className="mb-1 block text-slate-600">Career interests</span><input className={input} value={p.interests} onChange={(e) => setP({ ...p, interests: e.target.value })} /></label>
-            <label className="text-sm"><span className="mb-1 block text-slate-600">Weekly learning hours</span><input type="number" min={1} max={60} className={input} value={p.weeklyHours} onChange={(e) => setP({ ...p, weeklyHours: Math.max(1, Math.min(60, Number(e.target.value) || 1)) })} /></label>
+          <div className="grid gap-4">
+            <TextField label="Name" value={p.name} onChange={(v) => set('name', v)} />
+            <TextField label="Background / education" value={p.background} onChange={(v) => set('background', v)} />
+            <TextField label="Current role" value={p.currentRole} onChange={(v) => set('currentRole', v)} />
+            <TextField label="Career interests" value={p.interests} onChange={(v) => set('interests', v)} />
+            <TextField label="Weekly learning hours" type="number" min={1} max={60} value={p.weeklyHours} hint="Used to size milestones and project your readiness timeline."
+              onChange={(v) => set('weeklyHours', Math.max(1, Math.min(60, Number(v) || 1)))} />
           </div>
         </Card>
 
         <Card title="Skills (self-reported)">
           <ul className="space-y-2">
             {p.skills.map((s) => (
-              <li key={s.skillId} className="flex items-center justify-between gap-2">
-                <span className="text-sm text-slate-800">{skillName(s.skillId)}</span>
+              <li key={s.skillId} className="flex items-center justify-between gap-3">
+                <span className="text-sm text-gray-900">{skillName(s.skillId)}</span>
                 <div className="flex items-center gap-2">
-                  <select aria-label={`${skillName(s.skillId)} level`} className="rounded-lg border border-line-strong px-2 py-1 text-sm" value={s.selfLevel} onChange={(e) => setP({ ...p, skills: p.skills.map((x) => (x.skillId === s.skillId ? { ...x, selfLevel: Number(e.target.value) } : x)) })}>
-                    {LEVEL_LABELS.slice(1).map((l, i) => <option key={l} value={i + 1}>{l}</option>)}
-                  </select>
-                  <button aria-label={`Remove ${skillName(s.skillId)}`} className="rounded px-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-700" onClick={() => setP({ ...p, skills: p.skills.filter((x) => x.skillId !== s.skillId) })}>✕</button>
+                  <SelectMenu label={`${skillName(s.skillId)} level`} srOnlyLabel className="w-36" value={s.selfLevel} options={LEVEL_OPTIONS}
+                    onChange={(v) => set('skills', p.skills.map((x) => (x.skillId === s.skillId ? { ...x, selfLevel: v } : x)))} />
+                  <button aria-label={`Remove ${skillName(s.skillId)}`} className="rounded px-1.5 text-gray-400 hover:bg-rose-50 hover:text-rose-600" onClick={() => set('skills', p.skills.filter((x) => x.skillId !== s.skillId))}>✕</button>
                 </div>
               </li>
             ))}
           </ul>
-          <div className="mt-3 flex gap-2">
-            <select aria-label="Add skill" className="flex-1 rounded-lg border border-line-strong px-2 py-2 text-sm" value={newSkill} onChange={(e) => setNewSkill(e.target.value)}>
-              <option value="">Add a skill…</option>
-              {available.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-            <Button variant="secondary" disabled={!newSkill} onClick={() => { setP({ ...p, skills: [...p.skills, { skillId: newSkill, selfLevel: 1 }] }); setNewSkill(''); }}>Add</Button>
-          </div>
+          {available.length > 0 && (
+            <SelectMenu label="Add a skill" className="mt-4" value={null} placeholder="Choose a skill to add…" options={available}
+              onChange={(id) => set('skills', [...p.skills, { skillId: id, selfLevel: 1 }])} />
+          )}
         </Card>
 
         <Card title="Certifications">
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {p.certifications.map((c, i) => (
-              <li key={i} className="grid grid-cols-12 gap-2">
-                <input aria-label="Certification name" className={`${input} col-span-6`} value={c.name} onChange={(e) => setP({ ...p, certifications: p.certifications.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} />
-                <input aria-label="Issuer" className={`${input} col-span-4`} value={c.issuer} onChange={(e) => setP({ ...p, certifications: p.certifications.map((x, j) => (j === i ? { ...x, issuer: e.target.value } : x)) })} />
-                <button aria-label="Remove certification" className="col-span-2 rounded text-slate-500 hover:bg-rose-50 hover:text-rose-700" onClick={() => setP({ ...p, certifications: p.certifications.filter((_, j) => j !== i) })}>✕</button>
+              <li key={i} className="grid grid-cols-12 items-end gap-2">
+                <div className="col-span-6"><TextField label="Certification" value={c.name} onChange={(v) => set('certifications', p.certifications.map((x, j) => (j === i ? { ...x, name: v } : x)))} /></div>
+                <div className="col-span-5"><TextField label="Issuer" value={c.issuer} onChange={(v) => set('certifications', p.certifications.map((x, j) => (j === i ? { ...x, issuer: v } : x)))} /></div>
+                <button aria-label={`Remove certification ${c.name}`} className="col-span-1 rounded py-1.5 text-gray-400 hover:bg-rose-50 hover:text-rose-600" onClick={() => set('certifications', p.certifications.filter((_, j) => j !== i))}>✕</button>
               </li>
             ))}
           </ul>
-          <Button variant="secondary" className="mt-3" onClick={() => setP({ ...p, certifications: [...p.certifications, { name: 'New certification', issuer: '' }] })}>Add certification</Button>
+          <Button variant="secondary" className="mt-4" onClick={() => set('certifications', [...p.certifications, { name: 'New certification', issuer: '' }])}>Add certification</Button>
         </Card>
 
         <Card title="Projects & experience">
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {p.projects.map((pr, i) => (
-              <li key={i} className="space-y-1.5">
-                <div className="flex gap-2">
-                  <input aria-label="Project name" className={input} value={pr.name} onChange={(e) => setP({ ...p, projects: p.projects.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} />
-                  <button aria-label="Remove project" className="rounded px-2 text-slate-500 hover:bg-rose-50 hover:text-rose-700" onClick={() => setP({ ...p, projects: p.projects.filter((_, j) => j !== i) })}>✕</button>
+              <li key={i} className="space-y-2">
+                <div className="flex items-end gap-2">
+                  <div className="flex-1"><TextField label="Project name" value={pr.name} onChange={(v) => set('projects', p.projects.map((x, j) => (j === i ? { ...x, name: v } : x)))} /></div>
+                  <button aria-label={`Remove project ${pr.name}`} className="rounded px-2 py-1.5 text-gray-400 hover:bg-rose-50 hover:text-rose-600" onClick={() => set('projects', p.projects.filter((_, j) => j !== i))}>✕</button>
                 </div>
-                <textarea aria-label="Project description" rows={2} className={input} value={pr.description} onChange={(e) => setP({ ...p, projects: p.projects.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)) })} />
+                <TextAreaField label={`Description of ${pr.name}`} srOnlyLabel value={pr.description} onChange={(v) => set('projects', p.projects.map((x, j) => (j === i ? { ...x, description: v } : x)))} />
               </li>
             ))}
           </ul>
-          <Button variant="secondary" className="mt-3" onClick={() => setP({ ...p, projects: [...p.projects, { name: 'New project', description: '' }] })}>Add project</Button>
+          <Button variant="secondary" className="mt-4" onClick={() => set('projects', [...p.projects, { name: 'New project', description: '' }])}>Add project</Button>
         </Card>
       </div>
 
       <Card title="Demo controls">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-slate-500">Restore the preloaded learner (Python, SQL, basic HTML → Full Stack Developer) for a clean demo.</p>
-          <Button variant="danger" onClick={reset} disabled={busy}>Reset demo learner</Button>
+          <Button variant="danger" onClick={() => setConfirmReset(true)} disabled={busy}>Reset demo learner</Button>
         </div>
       </Card>
+
+      <ConfirmDialog open={confirmReset} onClose={() => setConfirmReset(false)} onConfirm={reset} confirmLabel="Reset" danger title="Reset to the demo learner?">
+        This clears all progress, assessment attempts, roadmap versions and mentor history, and restores the preloaded learner.
+      </ConfirmDialog>
     </div>
   );
 }

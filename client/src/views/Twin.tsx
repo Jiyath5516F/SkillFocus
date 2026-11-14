@@ -1,14 +1,15 @@
+import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { useMemo, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { LEVEL_LABELS, ROLE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
 import { computeTwin, estimateSkill } from '../../../shared/engine';
 import { useApp } from '../App';
 import { api } from '../api';
+import { CheckChip } from '../components/hui';
 import { Badge, Button, Card, ConfidenceBadge, Delta, LevelBar, ProofMeter, ReadinessRing, fmtDate } from '../components/ui';
 
 export function Twin() {
   const { state, meta, track, busy, notify } = useApp();
-  const [open, setOpen] = useState<string | null>(null);
   const [whatIf, setWhatIf] = useState<string[]>([]);
   const twin = state.twin;
   const role = ROLE_BY_ID[twin.roleId];
@@ -32,7 +33,7 @@ export function Twin() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Career Twin</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Career Twin</h1>
         <p className="mt-1 max-w-3xl text-sm text-slate-500">
           A live, evidence-based model of your readiness for <span className="font-medium text-slate-700">{role.title}</span>. Self-reported skills are discounted until a project, certification or assessment backs them; assessments override everything they supersede.
         </p>
@@ -54,12 +55,12 @@ export function Twin() {
           <div className="h-80" role="img" aria-label="Radar chart of required, effective and self-reported levels per skill. The same values are listed in the evidence ledger below.">
             <ResponsiveContainer>
               <RadarChart data={radar} outerRadius="70%">
-                <PolarGrid stroke="#e4dccb" />
+                <PolarGrid stroke="#e5e7eb" />
                 <PolarAngleAxis dataKey="skill" tick={{ fontSize: 11, fill: '#475569' }} />
                 <PolarRadiusAxis domain={[0, 4]} tickCount={5} tick={false} axisLine={false} />
                 <Radar name="Required" dataKey="Required" stroke="#8a7f6a" fill="#8a7f6a" fillOpacity={0.06} strokeDasharray="4 3" />
-                <Radar name="Self-reported" dataKey="Self-reported" stroke="#d98a1f" fill="#d98a1f" fillOpacity={0.12} />
-                <Radar name="Effective" dataKey="Effective" stroke="#1f2a48" fill="#1f2a48" fillOpacity={0.45} strokeWidth={2} />
+                <Radar name="Self-reported" dataKey="Self-reported" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.12} />
+                <Radar name="Effective" dataKey="Effective" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.45} strokeWidth={2} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Tooltip />
               </RadarChart>
@@ -101,29 +102,29 @@ export function Twin() {
         <div className="divide-y divide-stone-100">
           {twin.requirements.map((r) => {
             const est = estimateSkill(r.skillId, state.profile, state.evidence);
+            const note = state.matching?.notes.find((n) => n.skillId === r.skillId)?.note;
             return (
-              <div key={r.skillId} className="py-3">
-                <button className="grid w-full grid-cols-12 items-center gap-3 text-left" onClick={() => setOpen(open === r.skillId ? null : r.skillId)} aria-expanded={open === r.skillId}>
+              <Disclosure key={r.skillId} as="div" className="py-3">
+                <DisclosureButton className="group grid w-full grid-cols-12 items-center gap-3 rounded-md text-left">
                   <div className="col-span-12 sm:col-span-4">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-medium text-slate-900">{skillName(r.skillId)}</span>
+                      <span className="font-semibold text-gray-900">{skillName(r.skillId)}</span>
                       {r.weight === 3 && <Badge tone="slate">critical</Badge>}
+                      <span className="text-gray-400 transition-transform group-data-open:rotate-90" aria-hidden>›</span>
                     </div>
                     <div className="mt-1 flex gap-1.5"><ConfidenceBadge c={r.confidence} />{r.status === 'met' && <Badge tone="emerald">met</Badge>}</div>
                   </div>
                   <div className="col-span-8 sm:col-span-5"><LevelBar effective={r.effective} required={r.required} self={r.selfLevel} /></div>
                   <div className="col-span-4 text-right text-xs text-slate-500 sm:col-span-3">
-                    <span className="tabular-nums font-medium text-slate-800">{r.effective}</span> / {r.required} · {r.status === 'met' ? 'covered' : `+${r.impact} pts`}
+                    <span className="tabular-nums font-semibold text-gray-900">{r.effective}</span> / {r.required} · {r.status === 'met' ? 'covered' : `+${r.impact} pts`}
                   </div>
-                </button>
-                {open === r.skillId && (
-                  <ul className="mt-2 space-y-1 rounded-lg bg-paper p-3 text-xs text-slate-600">
-                    <li>Required: {LEVEL_LABELS[r.required]} ({r.required}) · weight {r.weight}</li>
-                    {est.sources.length ? est.sources.map((s, i) => <li key={i}>• {s}</li>) : <li>• No evidence yet</li>}
-                    {state.matching?.notes.find((n) => n.skillId === r.skillId) && <li className="text-slate-700">Career Matching Agent: {state.matching.notes.find((n) => n.skillId === r.skillId)!.note}</li>}
-                  </ul>
-                )}
-              </div>
+                </DisclosureButton>
+                <DisclosurePanel as="ul" className="mt-2 space-y-1 rounded-lg bg-gray-50 p-3 text-xs text-gray-600">
+                  <li>Required: {LEVEL_LABELS[r.required]} ({r.required}) · weight {r.weight}</li>
+                  {est.sources.length ? est.sources.map((src, i) => <li key={i}>• {src}</li>) : <li>• No evidence yet</li>}
+                  {note && <li className="text-gray-800">Career Matching Agent: {note}</li>}
+                </DisclosurePanel>
+              </Disclosure>
             );
           })}
         </div>
@@ -133,10 +134,7 @@ export function Twin() {
         <Card title="What-if simulator" subtitle="Preview the effect of mastering a skill. Simulation only — never saved.">
           <div className="flex flex-wrap gap-2">
             {twin.requirements.filter((r) => r.status !== 'met').map((r) => (
-              <label key={r.skillId} className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm ${whatIf.includes(r.skillId) ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-line'}`}>
-                <input type="checkbox" className="accent-brand-700" checked={whatIf.includes(r.skillId)} onChange={(e) => setWhatIf(e.target.checked ? [...whatIf, r.skillId] : whatIf.filter((x) => x !== r.skillId))} />
-                {skillName(r.skillId)}
-              </label>
+              <CheckChip key={r.skillId} label={skillName(r.skillId)} checked={whatIf.includes(r.skillId)} onChange={(c) => setWhatIf(c ? [...whatIf, r.skillId] : whatIf.filter((x) => x !== r.skillId))} />
             ))}
           </div>
           {sim ? (
@@ -177,7 +175,7 @@ export function Twin() {
                   <XAxis dataKey="v" tick={{ fontSize: 11 }} />
                   <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
                   <Tooltip formatter={(v) => [`${v}%`, 'Readiness']} />
-                  <Line type="monotone" dataKey="readiness" stroke="#1f2a48" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="readiness" stroke="#4f46e5" strokeWidth={2} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

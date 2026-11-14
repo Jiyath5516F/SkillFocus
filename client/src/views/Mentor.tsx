@@ -38,7 +38,7 @@ export function Mentor() {
   return (
     <div className="flex h-[calc(100vh-9rem)] flex-col">
       <div className="mb-4">
-        <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Ask Mira</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Ask Mira</h1>
         <p className="mt-1 text-sm text-slate-500">Your mentor answers from your actual profile, evidence, assessments and roadmap history — never invented achievements.</p>
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-line bg-card p-4" aria-live="polite" role="log" aria-label="Conversation with Mira" tabIndex={0}>

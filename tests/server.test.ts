@@ -32,6 +32,14 @@ describe('grading', () => {
     assert.equal(g.verifiedLevel, 1);
     assert.deepEqual([...g.weakConcepts].sort(), ['arrays_objects', 'async', 'closures', 'dom']);
   });
+  it('every assessment has a valid answer key and concept labels', () => {
+    for (const a of Object.values(ASSESSMENT_BY_ID)) {
+      for (const q of a.questions) {
+        assert.ok(q.answer >= 0 && q.answer < q.options.length, `${q.id} answer index`);
+        assert.ok(a.concepts[q.concept], `${q.id} concept label`);
+      }
+    }
+  });
   it('counts unanswered questions', () => {
     assert.equal(countAnswered(js, { js1: 0, js2: null }), 1);
   });

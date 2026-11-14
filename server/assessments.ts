@@ -34,6 +34,20 @@ export const ASSESSMENTS: AssessmentDef[] = [
       { id: 'sq5', concept: 'aggregation', prompt: 'COUNT(column) differs from COUNT(*) because it…', options: ['counts distinct values', 'ignores NULLs in that column', 'is faster', 'counts columns'], answer: 1, explanation: 'COUNT(column) skips NULLs; COUNT(*) counts every row.' },
     ],
   },
+  {
+    id: 'py-core',
+    skillId: 'python',
+    title: 'Python Fundamentals Check',
+    concepts: { data_structures: 'Data structures', functions: 'Functions & scope', comprehensions: 'Comprehensions & iteration', errors: 'Errors & files' },
+    questions: [
+      { id: 'py1', concept: 'data_structures', prompt: 'What does this print?', code: 'a = [1, 2, 3]\nb = a\nb.append(4)\nprint(len(a))', options: ['3', '4', 'Error', 'None'], answer: 1, explanation: 'b and a reference the same list object, so appending through b also changes a.' },
+      { id: 'py2', concept: 'data_structures', prompt: 'Which type can be used as a dictionary key?', options: ['list', 'dict', 'tuple of ints', 'set'], answer: 2, explanation: 'Keys must be hashable; tuples of immutable values are hashable, lists/dicts/sets are not.' },
+      { id: 'py3', concept: 'functions', prompt: 'What does this print on the second call?', code: 'def add(item, bucket=[]):\n    bucket.append(item)\n    return bucket\n\nadd(1)\nprint(add(2))', options: ['[2]', '[1, 2]', '[]', 'Error'], answer: 1, explanation: 'Default arguments are evaluated once, so the same list is reused across calls. Use bucket=None instead.' },
+      { id: 'py4', concept: 'comprehensions', prompt: 'What is the result?', code: '[x * x for x in range(5) if x % 2 == 0]', options: ['[0, 4, 16]', '[1, 9]', '[0, 1, 4, 9, 16]', '[4, 16]'], answer: 0, explanation: 'range(5) gives 0–4; keeping even numbers 0, 2, 4 and squaring gives [0, 4, 16].' },
+      { id: 'py5', concept: 'comprehensions', prompt: 'What does `zip([1, 2, 3], "ab")` produce when converted to a list?', options: ["[(1, 'a'), (2, 'b'), (3, None)]", "[(1, 'a'), (2, 'b')]", 'An error', "[1, 'a', 2, 'b']"], answer: 1, explanation: 'zip stops at the shortest iterable.' },
+      { id: 'py6', concept: 'errors', prompt: 'Why is `with open("data.csv") as f:` preferred over `f = open("data.csv")`?', options: ['It reads faster', 'It closes the file even if an error occurs', 'It loads the file into memory', 'It is required for CSV files'], answer: 1, explanation: 'The context manager guarantees the file is closed when the block exits, including on exceptions.' },
+    ],
+  },
 ];
 
 export const ASSESSMENT_BY_ID: Record<string, AssessmentDef> = Object.fromEntries(ASSESSMENTS.map((a) => [a.id, a]));

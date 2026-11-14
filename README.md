@@ -100,7 +100,7 @@ The **Agent activity** drawer shows each run as it executes: agent, status, time
 - Role requirements are **illustrative benchmarks**, not universal hiring standards.
 - Skills use a 0–4 scale (None, Basic, Working, Proficient, Advanced).
 - Score bands map to levels: <40% → Basic, 40–69% → Working, 70–89% → Proficient, ≥90% → Advanced. Any concept scored below 50% is "weak".
-- Assessments are short multiple-choice checks (JavaScript: 8 questions; SQL: 5) graded deterministically. No free-text AI grading.
+- Assessments are short multiple-choice checks (JavaScript: 8 questions; SQL: 5; Python: 6) graded deterministically. No free-text AI grading.
 - The resources are a curated set of 48 well-known free resources. Links were checked when the catalog was built; a few sites block automated checks.
 
 ## Run it locally
@@ -179,5 +179,5 @@ deploy/   systemd, nginx, Caddy, deploy script        docs/  plan & demo script
 ## Known limitations
 
 - Single learner, no authentication or multi-tenant admin dashboard yet.
-- Only two assessment banks so far (JavaScript, SQL). Other skills rely on self-reports, claims or evidence until assessed.
+- Three assessment banks so far (JavaScript, SQL, Python). Other skills rely on self-reports, claims or evidence until assessed.
 - An agent run takes about 20–40 s with real model calls; the live activity drawer shows progress while it runs.

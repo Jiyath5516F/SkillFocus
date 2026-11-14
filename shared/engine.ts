@@ -145,3 +145,35 @@ export function proofBreakdown(requirements: Pick<RequirementResult, 'weight' | 
   const total = pts.assessed + pts.evidence + pts.unverified;
   return { ...pts, total, provenShare: total ? Math.round(((pts.assessed + pts.evidence) / total) * 100) : 0 };
 }
+
+export interface ForecastPoint { week: number; readiness: number; milestone: string | null }
+
+/**
+ * Readiness forecast (projection, never saved): walks the pending roadmap in order, spending the learner's
+ * weekly hours, and assumes each skill reaches its required level — verified by assessment — once its last
+ * pending milestone is finished. Deterministic, so the same inputs always give the same timeline.
+ */
+export function forecastReadiness(
+  profile: Profile, evidence: Evidence[], roleId: string,
+  milestones: { key: string; skillId: string; title: string; effortHours: number }[], doneKeys: Set<string>, weeklyHours: number,
+): ForecastPoint[] {
+  const role = ROLE_BY_ID[roleId];
+  if (!role) throw new Error(`Unknown role: ${roleId}`);
+  const hours = Math.max(1, weeklyHours);
+  const pending = milestones.filter((m) => !doneKeys.has(m.key));
+  const lastIdx: Record<string, number> = {};
+  pending.forEach((m, i) => { lastIdx[m.skillId] = i; });
+  const overrides: Record<string, number> = {};
+  const points: ForecastPoint[] = [{ week: 0, readiness: computeTwin(profile, evidence, roleId).readiness, milestone: null }];
+  let spent = 0;
+  pending.forEach((m, i) => {
+    spent += m.effortHours;
+    const req = role.requirements.find((r) => r.skillId === m.skillId);
+    if (req && lastIdx[m.skillId] === i) overrides[m.skillId] = Math.max(req.level, overrides[m.skillId] ?? 0);
+    points.push({ week: round1(spent / hours), readiness: computeTwin(profile, evidence, roleId, overrides).readiness, milestone: m.title });
+  });
+  return points;
+}
+
+/** First projected week at which readiness reaches `target`, or null if the roadmap never gets there. */
+export const weeksToReach = (points: ForecastPoint[], target: number) => points.find((p) => p.readiness >= target)?.week ?? null;

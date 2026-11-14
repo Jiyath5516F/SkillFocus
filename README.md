@@ -48,6 +48,7 @@ Career Twin is a transparent, evidence-based model of the learner's readiness fo
 - **Explainable readiness.** `readiness = Σ weight × min(effective / required, 1) ÷ Σ weight`, with weights critical 3, important 2, nice-to-have 1. Each skill's **impact** is the number of readiness points it would add if mastered, which drives prioritisation. The figure is always labelled an *estimate, not a hiring probability*.
 - **Proof meter.** Splits the readiness estimate into *assessed*, *evidence-backed* and *unverified* points using the same formula, so a learner can see at a glance how much of their readiness is actually proven.
 - **Before/after comparison.** Each roadmap revision stores a snapshot, so the UI shows readiness and per-skill changes, plus the milestones that were added, removed or reordered.
+- **Readiness forecast (unique).** A deterministic, week-by-week projection: walking the pending roadmap at the learner's weekly study hours, when could readiness reach 70% if each milestone is completed *and verified*? A study-time simulator (4–20 h/week) recomputes it instantly. Mira uses it to answer "When could I reach 70%?". It is labelled a projection, never a promise, and is never saved.
 - **What-if simulator.** Previews readiness if you mastered selected skills. It uses the same engine on the client and **never writes to the database**.
 - **Goal comparison.** The same evidence is evaluated against all three roles. Switching goal keeps all history.
 
@@ -138,7 +139,7 @@ Production: `npm run build && npm start`, which serves the built client and the 
 ## Testing
 
 ```bash
-npm test             # 31 unit + API tests: engine, grading, roadmap assembly, AI-output validation,
+npm test             # 36 unit + API tests: engine, grading, roadmap assembly, AI-output validation,
                      # input validation, security headers, cohort analytics, and the no-AI rule-based fallback
 npm run acceptance   # 3 end-to-end acceptance tests against a running server (real agent runs)
 npm run check        # typecheck + unit tests + production build
@@ -166,7 +167,7 @@ The acceptance tests cover the three required scenarios:
 - Agents receive compact JSON summaries, never the full history.
 - Run history loads in two queries (runs, then all their steps), with indexes on the hot lookups.
 - Agent runs are asynchronous: the API returns a `runId` immediately and the UI polls one small endpoint.
-- The charting library loads only with Career Twin, cutting the initial JavaScript from 704 kB to 284 kB.
+- The charting library loads only with Career Twin (a separate chunk), keeping the initial JavaScript at about 130 kB gzipped.
 
 ## Accessibility
 

@@ -5,6 +5,7 @@ import { LEVEL_LABELS, ROLE_BY_ID, milestoneLabel, skillName } from '../../../sh
 import { computeTwin, estimateSkill } from '../../../shared/engine';
 import { useApp } from '../App';
 import { api } from '../api';
+import { ForecastCard } from '../components/Forecast';
 import { CheckChip } from '../components/hui';
 import { Badge, Button, Card, ConfidenceBadge, Delta, LevelBar, ProofMeter, ReadinessRing, fmtDate } from '../components/ui';
 
@@ -97,6 +98,8 @@ export function Twin() {
           <p className="mt-3 text-sm text-slate-600">{rev.changeSummary}</p>
         </Card>
       )}
+
+      <ForecastCard state={state} />
 
       <Card title="Evidence ledger" subtitle="Click a skill to see exactly where its estimate comes from">
         <div className="divide-y divide-stone-100">

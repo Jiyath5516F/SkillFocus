@@ -12,6 +12,7 @@ const SUGGESTIONS = [
   'What should I study next?',
   'How can I improve my assessment performance?',
   'What changes if I become a Data Analyst instead?',
+  'When could I reach 70% readiness?',
 ];
 
 export function Mentor() {

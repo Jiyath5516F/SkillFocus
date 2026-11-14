@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { computeTwin, diffMilestones, estimateSkill, orderByPrereqs, proofBreakdown, scoreToLevel } from '../shared/engine';
+import { computeTwin, diffMilestones, estimateSkill, forecastReadiness, orderByPrereqs, proofBreakdown, scoreToLevel, weeksToReach } from '../shared/engine';
 import type { Evidence, Profile, RoadmapRevision } from '../shared/types';
 
 const profile: Profile = {
@@ -98,5 +98,25 @@ describe('proofBreakdown', () => {
     assert.ok(p.assessed > 0 && p.unverified > 0);
     assert.ok(Math.abs(p.total - t.readiness) < 0.2);
     assert.ok(p.provenShare > 0 && p.provenShare < 100);
+  });
+});
+
+describe('forecastReadiness', () => {
+  const ms = [
+    { key: 'learn:javascript', skillId: 'javascript', title: 'JS', effortHours: 16 },
+    { key: 'fix:javascript:closures', skillId: 'javascript', title: 'Closures', effortHours: 4 },
+    { key: 'learn:react', skillId: 'react', title: 'React', effortHours: 24 },
+  ];
+  it('is non-decreasing and only credits a skill after its last pending milestone', () => {
+    const pts = forecastReadiness(profile, [], 'fullstack', ms, new Set(), 8);
+    for (let i = 1; i < pts.length; i++) assert.ok(pts[i].readiness >= pts[i - 1].readiness);
+    assert.equal(pts[1].readiness, pts[0].readiness, 'JS not credited until its remediation is done');
+    assert.ok(pts[2].readiness > pts[1].readiness);
+    assert.equal(pts[3].week, 5.5); // 44 hours at 8 h/week
+  });
+  it('scales with weekly hours and skips completed milestones', () => {
+    assert.equal(forecastReadiness(profile, [], 'fullstack', ms, new Set(), 16).at(-1)!.week, 2.8);
+    assert.equal(forecastReadiness(profile, [], 'fullstack', ms, new Set(['learn:javascript']), 8).length, 3);
+    assert.equal(weeksToReach([{ week: 0, readiness: 10, milestone: null }, { week: 3, readiness: 72, milestone: 'x' }], 70), 3);
   });
 });

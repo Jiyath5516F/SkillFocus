@@ -1,5 +1,5 @@
 // Builds the client state and the grounded mentor snapshot from persisted data.
-import { computeTwin } from '../shared/engine';
+import { computeTwin, forecastReadiness, weeksToReach } from '../shared/engine';
 import { ROLES, ROLE_BY_ID, skillName } from '../shared/catalog';
 import type { AppState } from '../shared/types';
 import * as store from './db';
@@ -44,6 +44,11 @@ export function mentorSnapshot() {
     previousRoadmapVersions: prevForRole.slice(1, 4).map((r) => ({ version: r.version, trigger: r.trigger, readiness: r.snapshot.readiness, milestoneKeys: r.milestones.map((m) => m.key) })),
     otherRoleHistory: s.revisions.filter((r) => r.roleId !== s.profile.targetRoleId).slice(0, 3).map((r) => ({ role: ROLE_BY_ID[r.roleId]?.title, version: r.version, readiness: r.snapshot.readiness })),
     assessmentAttempts: s.attempts.slice(0, 4).map((a) => ({ id: a.id, skill: skillName(a.skillId), scorePercent: a.score, correct: a.correct, total: a.total, verifiedLevel: a.verifiedLevel, weakConcepts: a.weakConcepts, diagnosis: a.diagnosis, date: a.createdAt })),
+    readinessForecast: s.roadmap && (() => {
+      const done = new Set(Object.values(s.progress).filter((p) => p.status === 'done').map((p) => p.key));
+      const pts = forecastReadiness(s.profile, s.evidence, s.profile.targetRoleId, s.roadmap.milestones, done, s.profile.weeklyHours);
+      return { note: 'Deterministic projection assuming each milestone is completed and verified by assessment; not a promise', weeklyHours: s.profile.weeklyHours, weeksTo70Percent: weeksToReach(pts, 70), projectedFinalReadiness: pts[pts.length - 1].readiness, totalWeeks: pts[pts.length - 1].week };
+    })(),
     roleComparisons: ROLES.map((r) => {
       const t = computeTwin(s.profile, s.evidence, r.id);
       return { role: r.title, readinessEstimate: t.readiness, topGaps: t.orderedGaps.slice(0, 4).map(skillName) };

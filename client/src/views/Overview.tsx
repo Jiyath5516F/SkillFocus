@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { LEVEL_LABELS, RESOURCE_BY_ID, ROLE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
 import { useApp } from '../App';
+import { FORECAST_TARGET, useForecast } from '../forecast';
 import { api } from '../api';
 import { Badge, Button, Card, ConfidenceBadge, Delta, Empty, LevelBar, ProofMeter, ReadinessRing, fmtDate } from '../components/ui';
 
 export function Overview() {
   const { state, meta, track, busy, go, notify } = useApp();
+  const forecast = useForecast(state, state.profile.weeklyHours);
   const [starting, setStarting] = useState(false);
   const role = meta.roles.find((r) => r.id === state.profile.targetRoleId)!;
   const topGaps = [...state.twin.requirements].filter((r) => r.status !== 'met').sort((a, b) => b.impact - a.impact).slice(0, 3);
@@ -35,6 +37,7 @@ export function Overview() {
               )}
               <div className="text-slate-500">{state.twin.requirements.filter((r) => r.status === 'met').length} of {state.twin.requirements.length} requirements met</div>
               <p className="text-xs text-slate-500">Estimate of skill coverage — not a hiring probability.</p>
+              {forecast?.toTarget != null && <p className="text-xs text-indigo-700">Projection: ~{Math.ceil(forecast.toTarget)} weeks to {FORECAST_TARGET}% at {state.profile.weeklyHours} h/week</p>}
             </div>
           </div>
           <div className="mt-5 border-t border-line pt-4"><ProofMeter requirements={state.twin.requirements} /></div>

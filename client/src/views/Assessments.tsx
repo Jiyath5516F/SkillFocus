@@ -1,3 +1,4 @@
+import { Radio, RadioGroup } from '@headlessui/react';
 import { useState } from 'react';
 import { LEVEL_LABELS, skillName } from '../../../shared/catalog';
 import type { AssessmentAttempt, PublicAssessment } from '../../../shared/types';
@@ -100,14 +101,18 @@ export function Assessments() {
                 <legend className="sr-only">Question {i + 1}</legend>
                 <div className="flex items-center gap-2"><span className="text-sm font-semibold text-slate-900">{i + 1}. {q.prompt}</span><Badge>{quiz.concepts[q.concept]}</Badge></div>
                 {q.code && <pre className="code-block mt-3 overflow-x-auto rounded-lg bg-slate-900 p-3 text-[13px] leading-relaxed text-slate-100">{q.code}</pre>}
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {/* Headless UI RadioGroup: roving focus + arrow-key navigation, styled via data-checked/data-focus */}
+                <RadioGroup value={answers[q.id] ?? null} onChange={(v: number) => setAnswers({ ...answers, [q.id]: v })} aria-label={`Answer to question ${i + 1}`} className="mt-3 grid gap-2 sm:grid-cols-2">
                   {q.options.map((o, oi) => (
-                    <label key={oi} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${answers[q.id] === oi ? 'border-brand-600 bg-brand-50' : 'border-line hover:bg-paper'}`}>
-                      <input type="radio" name={q.id} className="accent-brand-700" checked={answers[q.id] === oi} onChange={() => setAnswers({ ...answers, [q.id]: oi })} />
+                    <Radio key={oi} value={oi} data-question={q.id}
+                      className="group flex cursor-pointer items-center gap-2.5 rounded-lg border border-line px-3 py-2 text-sm hover:bg-paper focus:outline-none data-checked:border-ink data-checked:bg-marigold-soft data-focus:ring-2 data-focus:ring-marigold">
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-line-strong bg-card group-data-checked:border-ink" aria-hidden>
+                        <span className="invisible h-2 w-2 rounded-full bg-ink group-data-checked:visible" />
+                      </span>
                       <span className="code-block">{o}</span>
-                    </label>
+                    </Radio>
                   ))}
-                </div>
+                </RadioGroup>
               </fieldset>
             </li>
           ))}

@@ -1,3 +1,4 @@
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useEffect, useState } from 'react';
 import type { AgentRun, AgentStep } from '../../../shared/types';
 import { api } from '../api';
@@ -85,22 +86,18 @@ export function AgentDrawer({ open, onClose, activeRun, refreshKey }: { open: bo
     api.runs().then(setRuns).catch(() => setRuns([]));
   }, [open, refreshKey, activeRun?.status]);
   useEffect(() => { if (activeRun) setSelected(activeRun.id); }, [activeRun?.id]);
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
 
   const shown = activeRun && selected === activeRun.id ? activeRun : runs.find((r) => r.id === selected) ?? activeRun ?? runs[0] ?? null;
 
   return (
-    <>
-      <div className={`fixed inset-0 z-30 bg-slate-900/20 transition-opacity ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`} onClick={onClose} />
-      <aside className={`fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l border-line bg-paper shadow-xl transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`} aria-label="Agent activity" aria-hidden={!open} inert={!open}>
+    // Headless UI Dialog: focus trap, Escape to close, aria-modal and scroll locking — styled with Mira's own tokens.
+    <Dialog open={open} onClose={onClose} className="relative z-40">
+      <DialogBackdrop transition className="fixed inset-0 bg-ink/25 transition-opacity duration-200 data-closed:opacity-0" />
+      <div className="fixed inset-y-0 right-0 flex w-full max-w-md">
+      <DialogPanel transition className="flex w-full flex-col border-l border-line bg-paper shadow-xl transition-transform duration-200 ease-out data-closed:translate-x-full">
         <div className="flex items-center justify-between border-b border-line bg-white px-5 py-4">
           <div>
-            <h2 className="font-semibold text-slate-900">Agent activity</h2>
+            <DialogTitle className="font-display text-lg font-medium text-ink">Agent activity</DialogTitle>
             <p className="text-xs text-slate-500">Real executions, recorded by the orchestrator</p>
           </div>
           <button onClick={onClose} className="rounded-md px-2 py-1 text-slate-500 hover:bg-paper-deep" aria-label="Close agent activity">✕</button>
@@ -127,7 +124,8 @@ export function AgentDrawer({ open, onClose, activeRun, refreshKey }: { open: bo
             <p className="text-sm text-slate-500">No agent runs yet. Run a skill analysis to see the agents collaborate.</p>
           )}
         </div>
-      </aside>
-    </>
+      </DialogPanel>
+      </div>
+    </Dialog>
   );
 }

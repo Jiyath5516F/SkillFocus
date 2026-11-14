@@ -1,4 +1,4 @@
-import { ArrowUturnLeftIcon, CheckIcon, SparklesIcon, XMarkIcon } from '@heroicons/react/20/solid';
+import { CheckIcon, SparklesIcon, XMarkIcon } from '@heroicons/react/20/solid';
 import { useEffect, useState } from 'react';
 import { LEVEL_LABELS, SKILLS, skillName } from '../../../shared/catalog';
 import type { Profile } from '../../../shared/types';
@@ -6,16 +6,15 @@ import { useApp } from '../App';
 import { AimDesigner } from '../components/AimDesigner';
 import { allRoles } from '../roles';
 import { api } from '../api';
-import { ConfirmDialog, SelectMenu, TextAreaField, TextField } from '../components/hui';
+import { SelectMenu, TextAreaField, TextField } from '../components/hui';
 import { Badge, Button, Card } from '../components/ui';
 
 const LEVEL_OPTIONS = LEVEL_LABELS.slice(1).map((label, i) => ({ value: i + 1, label }));
 
 export function ProfileView() {
-  const { state, meta, track, busy, notify, setState } = useApp();
+  const { state, meta, track, busy, notify } = useApp();
   const [p, setP] = useState<Profile>(state.profile);
   const [saving, setSaving] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
   useEffect(() => setP(state.profile), [state.profile]);
 
   const dirty = JSON.stringify(p) !== JSON.stringify(state.profile);
@@ -25,9 +24,6 @@ export function ProfileView() {
   };
   const changeGoal = async (roleId: string) => {
     try { track((await api.changeGoal(roleId)).runId); } catch (e) { notify((e as Error).message); }
-  };
-  const reset = async () => {
-    try { setState(await api.reset()); notify('Demo learner restored.', 'info'); } catch (e) { notify((e as Error).message); }
   };
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setP({ ...p, [k]: v });
   const available = SKILLS.filter((s) => !p.skills.some((x) => x.skillId === s.id)).map((s) => ({ value: s.id, label: s.name }));
@@ -119,16 +115,7 @@ export function ProfileView() {
         </Card>
       </div>
 
-      <Card title="Demo controls">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-white/60">Restore the preloaded learner (Python, SQL, basic HTML → Full Stack Developer) for a clean demo.</p>
-          <Button variant="danger" onClick={() => setConfirmReset(true)} disabled={busy}><ArrowUturnLeftIcon aria-hidden className="size-4" /> Reset demo learner</Button>
-        </div>
-      </Card>
 
-      <ConfirmDialog open={confirmReset} onClose={() => setConfirmReset(false)} onConfirm={reset} confirmLabel="Reset" danger title="Reset to the demo learner?">
-        This clears all progress, assessment attempts, roadmap versions and mentor history, and restores the preloaded learner.
-      </ConfirmDialog>
     </div>
   );
 }

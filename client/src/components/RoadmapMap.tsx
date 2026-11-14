@@ -1,8 +1,6 @@
-// roadmap.sh-style roadmap: a solid blue spine of bright-yellow skill nodes, with remediation steps and
-// resources fanning out on curved, dotted blue connectors. Layout is computed deterministically so the SVG
+// roadmap.sh-style layout in Mira's dark Headless UI style: a glowing indigo spine of skill nodes, with
+// remediation steps and resources fanning out on curved, dotted connectors. Layout is computed deterministically so the SVG
 // connectors line up exactly with the nodes. Every node opens a Headless UI Popover with full details.
-import '@fontsource/balsamiq-sans/400.css';
-import '@fontsource/balsamiq-sans/700.css';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { ArrowTopRightOnSquareIcon, CheckIcon } from '@heroicons/react/20/solid';
 import { LEVEL_LABELS, RESOURCE_BY_ID, skillName } from '../../../shared/catalog';
@@ -14,16 +12,15 @@ const STATUS_OPTIONS: { value: MilestoneStatus; label: string }[] = [
   { value: 'todo', label: 'To do' }, { value: 'in_progress', label: 'In progress' }, { value: 'done', label: 'Done' },
 ];
 
-// roadmap.sh palette
-const BLUE = '#2b78e4';
-const FONT = { fontFamily: '"Balsamiq Sans", ui-rounded, system-ui, sans-serif' };
+// Mira palette (indigo accent on the dark Headless UI canvas)
+const BLUE = '#818cf8';
 
 // Canvas geometry (px). The canvas scrolls horizontally on narrow screens, like roadmap.sh.
 const W = 1000, CX = W / 2;
 const MAIN_W = 230, MAIN_H = 46;
 const SUB_W = 250, SUB_H = 40, SUB_GAP = 10;
 const LEFT_X = 30, RIGHT_X = W - 30 - SUB_W;
-const GROUP_GAP = 46, TOP = 150;
+const GROUP_GAP = 46, TOP = 200;
 
 interface Group { main: Milestone; fixes: Milestone[] }
 type Side = { kind: 'fix'; m: Milestone } | { kind: 'res'; r: Resource };
@@ -64,8 +61,8 @@ function fan(x1: number, y1: number, x2: number, y2: number) {
 }
 
 function CheckBadge({ status }: { status: MilestoneStatus }) {
-  if (status === 'done') return <span title="Done" className="absolute -top-2.5 -right-2.5 flex size-5 items-center justify-center rounded-full bg-[#874efe] ring-2 ring-white"><CheckIcon className="size-3.5 text-white" /></span>;
-  if (status === 'in_progress') return <span title="In progress" className="absolute -top-2.5 -right-2.5 flex size-5 items-center justify-center rounded-full bg-[#f59e0b] ring-2 ring-white"><span className="size-2 rounded-full bg-white" /></span>;
+  if (status === 'done') return <span title="Done" className="absolute -top-2.5 -right-2.5 flex size-5 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-neutral-950"><CheckIcon className="size-3.5 text-black" /></span>;
+  if (status === 'in_progress') return <span title="In progress" className="absolute -top-2 -right-2 size-4 rounded-full bg-amber-400 ring-2 ring-neutral-950" />;
   return null;
 }
 
@@ -97,7 +94,7 @@ function NodeButton({ m, status, editable, onStatus, className, style, children 
 }) {
   return (
     <Popover className="absolute" style={style}>
-      <PopoverButton className={`relative flex h-full w-full items-center justify-center rounded-[5px] border-2 border-black px-3 text-center text-black transition hover:brightness-95 focus:outline-none data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-[#2b78e4] ${className}`} style={FONT}>
+      <PopoverButton className={`relative flex h-full w-full items-center justify-center rounded-lg px-3 text-center text-white ring-1 backdrop-blur transition focus:outline-none data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-white ${className}`}>
         {children}
         <CheckBadge status={status} />
       </PopoverButton>
@@ -116,48 +113,55 @@ export function RoadmapMap({ milestones, progress, roleTitle, editable, onStatus
   const lastCy = blocks.length ? blocks[blocks.length - 1].cy : TOP;
 
   return (
-    <div className="overflow-x-auto rounded-xl bg-[#fdfdfd] ring-1 ring-white/10">
-      <div className="relative mx-auto" style={{ width: W, height: height + 60, ...FONT }}>
+    <div className="overflow-x-auto rounded-xl bg-white/[0.02] ring-1 ring-white/10">
+      <div className="relative mx-auto" style={{ width: W, height: height + 60 }}>
         {/* Legend, roadmap.sh style */}
-        <div className="absolute top-5 left-5 rounded-md border-2 border-black bg-white px-4 py-3 text-[13px] text-black">
-          <div className="flex items-center gap-2"><span className="flex size-4 items-center justify-center rounded-full bg-[#874efe]"><CheckIcon className="size-3 text-white" /></span> Done</div>
-          <div className="mt-1.5 flex items-center gap-2"><span className="flex size-4 items-center justify-center rounded-full bg-[#f59e0b]"><span className="size-1.5 rounded-full bg-white" /></span> In progress</div>
-          <div className="mt-1.5 flex items-center gap-2"><span className="h-3 w-5 rounded-[3px] border-2 border-black bg-[#ffff00]" /> Skill</div>
-          <div className="mt-1.5 flex items-center gap-2"><span className="h-3 w-5 rounded-[3px] border-2 border-black bg-[#ffe599]" /> Remediation from your assessment</div>
-          <div className="mt-1.5 flex items-center gap-2"><span className="h-3 w-5 rounded-[3px] border-2 border-black bg-[#f1f1f1]" /> Resource (opens in a new tab)</div>
+        <div className="absolute top-5 left-5 space-y-1.5 rounded-xl bg-white/5 px-4 py-3 text-xs text-white/80 ring-1 ring-white/10 backdrop-blur">
+          <div className="flex items-center gap-2"><span className="flex size-4 items-center justify-center rounded-full bg-emerald-500"><CheckIcon className="size-3 text-black" /></span> Done</div>
+          <div className="flex items-center gap-2"><span className="size-3.5 rounded-full bg-amber-400" /> In progress</div>
+          <div className="flex items-center gap-2"><span className="h-3 w-5 rounded bg-indigo-500/30 ring-1 ring-indigo-400/70" /> Skill</div>
+          <div className="flex items-center gap-2"><span className="h-3 w-5 rounded bg-rose-500/20 ring-1 ring-rose-400/50" /> Remediation from your assessment</div>
+          <div className="flex items-center gap-2"><span className="h-3 w-5 rounded bg-white/5 ring-1 ring-white/15" /> Resource (opens in a new tab)</div>
         </div>
-        <div className="absolute top-5 right-5 max-w-56 rounded-md bg-white px-4 py-3 text-[13px] text-black shadow-sm">
+        <div className="absolute top-5 right-5 max-w-56 rounded-xl bg-white/5 px-4 py-3 text-xs text-white/70 ring-1 ring-white/10 backdrop-blur">
           Click any node for the reason, exercise, resources and status.
         </div>
 
         <svg aria-hidden className="pointer-events-none absolute inset-0" width={W} height={height + 60}>
           {/* dotted lead-in above the title, then the solid spine */}
-          <line x1={CX} y1={0} x2={CX} y2={TOP - 78} stroke={BLUE} strokeWidth={3} strokeDasharray="0.5 7" strokeLinecap="round" />
-          <line x1={CX} y1={TOP - 30} x2={CX} y2={lastCy + 70} stroke={BLUE} strokeWidth={4} />
+          <defs>
+            <linearGradient id="spine" gradientUnits="userSpaceOnUse" x1={CX} y1={TOP - 30} x2={CX} y2={lastCy + 70}>
+              <stop offset="0" stopColor="#38bdf8" stopOpacity="0.9" /><stop offset="0.5" stopColor="#8b5cf6" /><stop offset="1" stopColor="#6366f1" stopOpacity="0.6" />
+            </linearGradient>
+          </defs>
+          <line x1={CX} y1={0} x2={CX} y2={TOP - 78} stroke={BLUE} strokeOpacity={0.6} strokeWidth={2.5} strokeDasharray="0.5 7" strokeLinecap="round" />
+          <line x1={CX} y1={TOP - 30} x2={CX} y2={lastCy + 70} stroke="url(#spine)" strokeWidth={3} style={{ filter: 'drop-shadow(0 0 6px rgba(139,92,246,0.6))' }} />
           {blocks.map((b) => [
-            ...b.left.map((n, k) => <path key={`l${b.g.main.key}${k}`} d={fan(CX - MAIN_W / 2, b.cy, n.x + SUB_W, n.y + SUB_H / 2)} fill="none" stroke={BLUE} strokeWidth={3} strokeDasharray="0.5 7" strokeLinecap="round" />),
-            ...b.right.map((n, k) => <path key={`r${b.g.main.key}${k}`} d={fan(CX + MAIN_W / 2, b.cy, n.x, n.y + SUB_H / 2)} fill="none" stroke={BLUE} strokeWidth={3} strokeDasharray="0.5 7" strokeLinecap="round" />),
+            ...b.left.map((n, k) => <path key={`l${b.g.main.key}${k}`} d={fan(CX - MAIN_W / 2, b.cy, n.x + SUB_W, n.y + SUB_H / 2)} fill="none" stroke={BLUE} strokeOpacity={0.75} strokeWidth={2.5} strokeDasharray="0.5 7" strokeLinecap="round" />),
+            ...b.right.map((n, k) => <path key={`r${b.g.main.key}${k}`} d={fan(CX + MAIN_W / 2, b.cy, n.x, n.y + SUB_H / 2)} fill="none" stroke={BLUE} strokeOpacity={0.75} strokeWidth={2.5} strokeDasharray="0.5 7" strokeLinecap="round" />),
           ])}
         </svg>
 
-        <h3 className="absolute text-center text-[28px] font-bold text-black" style={{ left: 0, width: W, top: TOP - 75 }}>{roleTitle}</h3>
+        <div className="absolute flex justify-center" style={{ left: 0, width: W, top: TOP - 78 }}>
+          <h3 className="rounded-full bg-neutral-950 px-6 py-2 text-xl font-bold tracking-tight text-white ring-1 ring-white/15">{roleTitle}</h3>
+        </div>
 
         <ol aria-label="Roadmap">
           {blocks.map((b) => (
             <li key={b.g.main.key}>
               <NodeButton m={b.g.main} status={st(b.g.main)} editable={editable} onStatus={(s) => onStatus(b.g.main.key, s)}
-                className="bg-[#ffff00] text-[15px] font-bold" style={{ left: CX - MAIN_W / 2, top: b.mainY, width: MAIN_W, height: MAIN_H }}>
+                className={`text-sm font-semibold ${st(b.g.main) === 'done' ? 'bg-emerald-500/15 ring-emerald-400/60' : 'bg-indigo-500/25 ring-indigo-400/70 hover:bg-indigo-500/35'} shadow-[0_0_24px_-8px_rgba(129,140,248,0.8)]`} style={{ left: CX - MAIN_W / 2, top: b.mainY, width: MAIN_W, height: MAIN_H }}>
                 {skillName(b.g.main.skillId)}
               </NodeButton>
               {[...b.left, ...b.right].map(({ it, x, y }) => it.kind === 'fix' ? (
                 <NodeButton key={it.m.key} m={it.m} status={st(it.m)} editable={editable} onStatus={(s) => onStatus(it.m.key, s)}
-                  className="bg-[#ffe599] text-[13px] leading-tight" style={{ left: x, top: y, width: SUB_W, height: SUB_H }}>
+                  className={`text-xs leading-tight ${st(it.m) === 'done' ? 'bg-emerald-500/10 ring-emerald-400/40' : 'bg-rose-500/15 ring-rose-400/50 hover:bg-rose-500/25'}`} style={{ left: x, top: y, width: SUB_W, height: SUB_H }}>
                   <span className="line-clamp-2">{it.m.title}</span>
                 </NodeButton>
               ) : (
                 <a key={it.r.id} href={it.r.url} target="_blank" rel="noreferrer" title={`${it.r.title} · ${it.r.provider}`}
-                  className="absolute flex items-center justify-center gap-1.5 rounded-[5px] border-2 border-black bg-[#f1f1f1] px-3 text-center text-[13px] leading-tight text-black hover:brightness-95"
-                  style={{ left: x, top: y, width: SUB_W, height: SUB_H, ...FONT }}>
+                  className="absolute flex items-center justify-center gap-1.5 rounded-lg bg-white/5 px-3 text-center text-xs leading-tight text-white/80 ring-1 ring-white/10 backdrop-blur hover:bg-white/10 hover:text-white"
+                  style={{ left: x, top: y, width: SUB_W, height: SUB_H }}>
                   <span className="truncate">{it.r.title}</span><ArrowTopRightOnSquareIcon aria-hidden className="size-3.5 shrink-0" />
                 </a>
               ))}
@@ -166,7 +170,7 @@ export function RoadmapMap({ milestones, progress, roleTitle, editable, onStatus
         </ol>
 
         <div className="absolute flex justify-center" style={{ left: 0, width: W, top: lastCy + 70 }}>
-          <span className="rounded-[5px] border-2 border-black bg-[#874efe] px-5 py-2 text-[15px] font-bold text-white">Ready for {roleTitle}</span>
+          <span className="rounded-full bg-emerald-500/15 px-5 py-2 text-sm font-semibold text-emerald-300 ring-1 ring-emerald-400/40">Ready for {roleTitle}</span>
         </div>
       </div>
     </div>

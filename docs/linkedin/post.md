@@ -34,4 +34,4 @@ What should a learning platform verify before it calls you "job-ready"?
 **First comment:**
 
 Try it or read the code: https://github.com/Jiyath5516F/SkillFocus
-(Add the live link here once the domain is ready.)
+Live demo (create a free account): https://mira.bedrockgraphics.com/Mira/

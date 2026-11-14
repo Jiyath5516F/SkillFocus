@@ -126,7 +126,7 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
     <AppCtx.Provider value={ctx}>
       <a href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }} className="sr-only z-50 rounded bg-neutral-900 px-3 py-2 text-sm text-white shadow focus:not-sr-only focus:fixed focus:top-2 focus:left-2">Skip to content</a>
       <div className="min-h-screen lg:flex">
-        <aside className="border-b border-white/10 bg-black/40 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:w-64 lg:border-r lg:border-b-0">
+        <aside className="border-b border-white/10 bg-black/40 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-b-0">
           <div className="flex items-center justify-between px-5 py-4 lg:block">
             <div className="flex items-center gap-2.5">
               <MiraAvatar size="md" />
@@ -145,11 +145,15 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
               </button>
             ))}
           </nav>
-          <div className="hidden px-5 pt-6 lg:block">
+          <div className="hidden px-3 pb-4 lg:mt-auto lg:block">
             <div className="rounded-lg bg-white/5 p-3 text-xs text-white/70 ring-1 ring-white/10">
-              <div className="truncate font-semibold text-white">{user.name}</div>
-              <div className="truncate text-white/60">{user.email}</div>
-              <div>{state.profile.background}</div>
+              <div className="flex items-center gap-2.5">
+                <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white">{user.name.trim().charAt(0).toUpperCase()}</span>
+                <div className="min-w-0">
+                  <div className="truncate font-semibold text-white">{user.name}</div>
+                  <div className="truncate text-white/60">{user.email}</div>
+                </div>
+              </div>
               <div className="mt-2 flex items-center gap-1.5">
                 <span className={`h-2 w-2 rounded-full ${state.aiConfigured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                 {state.aiConfigured ? 'AI agents online' : 'AI offline — rule-based mode'}
@@ -170,9 +174,14 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
             </div>
             <div className="flex items-center gap-2">
               <Button variant="secondary" className="lg:hidden" onClick={onSignOut} title="Sign out"><ArrowRightStartOnRectangleIcon aria-hidden className="size-4" /><span className="sr-only">Sign out</span></Button>
-              <Button variant="secondary" onClick={() => setDrawer(true)}>
-                {busy ? <><span className="pulse-dot h-2 w-2 rounded-full bg-indigo-400" /> Agents working…</> : <><CpuChipIcon aria-hidden className="size-4" /> Agent activity</>}
-              </Button>
+              <button onClick={() => setDrawer(true)} aria-live="polite"
+                className={`relative inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white transition ${busy
+                  ? 'bg-indigo-500/20 shadow-[0_0_24px_-2px_rgba(129,140,248,0.75)] ring-1 ring-indigo-400/70'
+                  : 'bg-white/5 ring-1 ring-inset ring-white/10 hover:bg-white/10'}`}>
+                {busy && <span aria-hidden className="absolute -top-1 -right-1 flex size-3"><span className="absolute inline-flex size-full animate-ping rounded-full bg-indigo-400 opacity-75" /><span className="relative inline-flex size-3 rounded-full bg-indigo-400" /></span>}
+                <CpuChipIcon aria-hidden className={`size-4 ${busy ? 'animate-spin [animation-duration:3s] text-indigo-300' : ''}`} />
+                {busy ? 'Agents working…' : 'Agent activity'}
+              </button>
             </div>
           </header>
 

@@ -106,7 +106,7 @@ export function Assessments() {
                 <RadioGroup value={answers[q.id] ?? null} onChange={(v: number) => setAnswers({ ...answers, [q.id]: v })} aria-label={`Answer to question ${i + 1}`} className="mt-3 grid gap-2 sm:grid-cols-2">
                   {q.options.map((o, oi) => (
                     <Radio key={oi} value={oi} data-question={q.id}
-                      className="group flex cursor-pointer items-center gap-2.5 rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/10 focus:outline-none data-checked:border-white/30 data-checked:bg-marigold-soft data-focus:ring-2 data-focus:ring-white/25">
+                      className="group flex cursor-pointer items-center gap-2.5 rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/10 focus:outline-none data-checked:border-indigo-400/60 data-checked:bg-indigo-500/15 data-checked:ring-1 data-checked:ring-indigo-400/60 data-focus:ring-2 data-focus:outline-2 data-focus:outline-white/40">
                       <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 group-data-checked:border-white" aria-hidden>
                         <span className="invisible h-2 w-2 rounded-full bg-white group-data-checked:visible" />
                       </span>
@@ -118,7 +118,7 @@ export function Assessments() {
             </li>
           ))}
         </ol>
-        <div className="sticky bottom-4 flex items-center justify-between rounded-xl border border-white/10 bg-white/95 p-4 shadow-lg backdrop-blur">
+        <div className="sticky bottom-4 flex items-center justify-between rounded-xl bg-neutral-900/90 p-4 shadow-2xl ring-1 ring-white/10 backdrop-blur-xl">
           <span className="text-sm text-white/70">{answered}/{quiz.questions.length} answered</span>
           <Button onClick={submit} disabled={answered < quiz.questions.length || loading || busy}>{loading ? <><Spinner /> Grading…</> : busy ? 'Agents busy…' : 'Submit answers'}</Button>
         </div>

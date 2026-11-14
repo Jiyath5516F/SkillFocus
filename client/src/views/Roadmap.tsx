@@ -1,10 +1,12 @@
-import { ArrowPathIcon, ArrowTopRightOnSquareIcon, SparklesIcon } from '@heroicons/react/20/solid';
+import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react';
+import { ArrowPathIcon, ArrowTopRightOnSquareIcon, ListBulletIcon, MapIcon, SparklesIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
-import { LEVEL_LABELS, RESOURCE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
+import { LEVEL_LABELS, RESOURCE_BY_ID, ROLE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
 import type { MilestoneStatus } from '../../../shared/types';
 import { useApp } from '../App';
 import { api } from '../api';
 import { SelectMenu, Segmented } from '../components/hui';
+import { RoadmapMap } from '../components/RoadmapMap';
 import { Badge, Button, Card, Empty, fmtDate } from '../components/ui';
 
 const STATUS: { value: MilestoneStatus; label: string }[] = [
@@ -69,6 +71,16 @@ export function Roadmap() {
 
       {!isCurrent && <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm text-amber-300">You're viewing an earlier version (read-only).</div>}
 
+      <TabGroup>
+        <TabList className="mb-4 flex gap-2" aria-label="Roadmap view">
+          <Tab className="flex items-center gap-1.5 px-3 py-1 text-sm/6 font-semibold text-white/70 rounded-full focus:outline-none data-hover:bg-white/5 data-selected:bg-white/10 data-selected:text-white data-focus:outline-1 data-focus:outline-white"><MapIcon aria-hidden className="size-4" /> Map</Tab>
+          <Tab className="flex items-center gap-1.5 px-3 py-1 text-sm/6 font-semibold text-white/70 rounded-full focus:outline-none data-hover:bg-white/5 data-selected:bg-white/10 data-selected:text-white data-focus:outline-1 data-focus:outline-white"><ListBulletIcon aria-hidden className="size-4" /> Details</Tab>
+        </TabList>
+        <TabPanels>
+          <TabPanel>
+            <RoadmapMap milestones={rev.milestones} progress={state.progress} roleTitle={ROLE_BY_ID[rev.roleId]?.title ?? ''} editable={isCurrent} onStatus={setStatus} />
+          </TabPanel>
+          <TabPanel>
       <ol className="space-y-3">
         {rev.milestones.map((m, i) => {
           const status = state.progress[m.key]?.status ?? 'todo';
@@ -114,6 +126,9 @@ export function Roadmap() {
           );
         })}
       </ol>
+          </TabPanel>
+        </TabPanels>
+      </TabGroup>
     </div>
   );
 }

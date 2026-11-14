@@ -90,7 +90,7 @@ Each agent is a separate model call with its own instructions and typed, schema-
 | Trigger | Agents in order |
 |---|---|
 | Analyze / profile saved | Skill Intelligence → engine → **(Career Matching ‖ Path Architect, in parallel)** → new revision → Mira summary |
-| Assessment submitted | deterministic grading → Assessment & Progress → Skill Intelligence (re-assess) → engine → (Matching ‖ Path Architect) → revision v+1 → Mira summary |
+| Assessment submitted | deterministic grading → **(Assessment & Progress ‖ Skill Intelligence re-assessment)** → engine → (Matching ‖ Path Architect) → revision v+1 → Mira summary |
 | Goal changed | history kept → engine → (Matching ‖ Path Architect) → revision for the new role → Mira summary |
 
 The **Agent activity** drawer shows each run as it executes: agent, status, timestamp, duration, model, tokens, input and output summaries, and errors. LLM calls, deterministic steps and rule-based fallbacks are labelled differently.

@@ -87,27 +87,32 @@ interface PlanOpts {
   before?: RevisionSnapshot | null;
 }
 
+/** Skill Intelligence step. 'full' refreshes project/certification evidence links; 'reassess' only updates the narrative. */
+async function skillIntelligenceStep(ctx: RunCtx, mode: 'full' | 'reassess') {
+  const profile = store.getProfile()!;
+  const attempts = store.listAttempts();
+  const intel = await ctx.llm('Skill Intelligence', `${profile.skills.length} self-reported skills, ${profile.certifications.length} certifications, ${profile.projects.length} projects, ${attempts.length} assessment attempts`,
+    () => runSkillIntelligence(profile, attempts),
+    (d) => `${d.links.length} evidence links proposed · strengths: ${d.strengths.slice(0, 2).join('; ')}`);
+  if (!intel) {
+    ctx.fallback('Skill Intelligence', 'AI unavailable', 'Kept existing evidence links; skill estimates use self-reports and assessments only.');
+    return;
+  }
+  if (mode === 'full') {
+    const links = validLinks(intel, profile);
+    store.deleteEvidence('project_link');
+    for (const l of links) store.addEvidence({ skillId: l.skillId, source: 'project_link', level: 1, detail: `${l.evidenceName} — ${l.reason}`.slice(0, 240), refId: l.evidenceName });
+  }
+  store.setLearnerJson('insights', { strengths: intel.strengths.slice(0, 4), weaknesses: intel.weaknesses.slice(0, 4), uncertainties: intel.uncertainties.slice(0, 3), summary: intel.summary });
+}
+
 async function planFlow(ctx: RunCtx, o: PlanOpts) {
   let profile = store.getProfile()!;
   const attempts = store.listAttempts();
   const before = o.before === undefined ? currentSnapshot() : o.before;
 
   // 1) Skill Intelligence Agent
-  if (o.skillIntel !== 'none') {
-    const intel = await ctx.llm('Skill Intelligence', `${profile.skills.length} self-reported skills, ${profile.certifications.length} certifications, ${profile.projects.length} projects, ${attempts.length} assessment attempts`,
-      () => runSkillIntelligence(profile, attempts),
-      (d) => `${d.links.length} evidence links proposed · strengths: ${d.strengths.slice(0, 2).join('; ')}`);
-    if (intel) {
-      if (o.skillIntel === 'full') {
-        const links = validLinks(intel, profile);
-        store.deleteEvidence('project_link');
-        for (const l of links) store.addEvidence({ skillId: l.skillId, source: 'project_link', level: 1, detail: `${l.evidenceName} — ${l.reason}`.slice(0, 240), refId: l.evidenceName });
-      }
-      store.setLearnerJson('insights', { strengths: intel.strengths.slice(0, 4), weaknesses: intel.weaknesses.slice(0, 4), uncertainties: intel.uncertainties.slice(0, 3), summary: intel.summary });
-    } else {
-      ctx.fallback('Skill Intelligence', 'AI unavailable', 'Kept existing evidence links; skill estimates use self-reports and assessments only.');
-    }
-  }
+  if (o.skillIntel !== 'none') await skillIntelligenceStep(ctx, o.skillIntel);
 
   // 2) Career Matching — deterministic engine
   profile = store.getProfile()!;
@@ -175,8 +180,12 @@ export function startAssessmentRun(def: AssessmentDef, attempt: AssessmentAttemp
     const sid = store.startStep(ctx.runId, 'Assessment & Progress', 'deterministic', null, `Grade ${attempt.total} answers against the answer key`);
     store.endStep(sid, { status: 'completed', durationMs: gradingMs, outputSummary: `Score ${attempt.score}% (${attempt.correct}/${attempt.total}) → verified level ${attempt.verifiedLevel} (role needs ${requiredLevel}) · weak: ${attempt.weakConcepts.join(', ') || 'none'}` });
 
-    const diag = await ctx.llm('Assessment & Progress', `${def.title}: ${attempt.correct}/${attempt.total}, weak concepts: ${attempt.weakConcepts.join(', ') || 'none'}`,
-      () => runAssessmentAgent(def, attempt, requiredLevel), (d) => d.focus);
+    // Independent → parallel: the diagnosis (for the Path Architect) and the Skill Intelligence re-assessment.
+    const [diag] = await Promise.all([
+      ctx.llm('Assessment & Progress', `${def.title}: ${attempt.correct}/${attempt.total}, weak concepts: ${attempt.weakConcepts.join(', ') || 'none'}`,
+        () => runAssessmentAgent(def, attempt, requiredLevel), (d) => d.focus),
+      skillIntelligenceStep(ctx, 'reassess'),
+    ]);
     const adapt = attempt.verifiedLevel < requiredLevel;
     if (diag) {
       const conceptNotes = diag.concepts.filter((c) => attempt.weakConcepts.includes(c.concept)).map((c) => `${def.concepts[c.concept]}: ${c.misconception} Tip: ${c.advice}`);
@@ -186,7 +195,7 @@ export function startAssessmentRun(def: AssessmentDef, attempt: AssessmentAttemp
       trigger: adapt
         ? `Assessment #${attempt.id} (${def.title}) scored ${attempt.score}% — below the required level; targeted remediation added`
         : `Assessment #${attempt.id} (${def.title}) scored ${attempt.score}% — skill verified`,
-      skillIntel: 'reassess',
+      skillIntel: 'none', // already re-assessed above, in parallel with the diagnosis
       before,
       diagnosis: diag ? `${diag.diagnosis} Focus: ${diag.focus}` : `Weak concepts: ${attempt.weakConcepts.join(', ')}`,
       event: `The learner completed the ${def.title} assessment: ${attempt.correct}/${attempt.total} (${attempt.score}%), verified level ${attempt.verifiedLevel} vs required ${requiredLevel}. Weak concepts: ${attempt.weakConcepts.join(', ') || 'none'}.`,

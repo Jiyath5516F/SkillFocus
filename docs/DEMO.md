@@ -1,6 +1,6 @@
 # Mira — live demo script (about 4 minutes)
 
-**Before you start:** go to Profile → **Reset demo learner**. Keep the Agent activity drawer in mind; it opens automatically during agent runs.
+**Before you start:** go to Profile → **Reset demo learner**. This also clears the 10-minute retake cooldown if you rehearsed the quiz. Keep the Agent activity drawer in mind; it opens automatically during agent runs.
 
 | # | Do | Say |
 |---|---|---|

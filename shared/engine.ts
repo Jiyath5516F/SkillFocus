@@ -12,7 +12,8 @@ export function scoreToLevel(score: number): number {
   if (score >= 90) return 4;
   if (score >= 70) return 3;
   if (score >= 40) return 2;
-  return 1;
+  if (score >= 20) return 1;
+  return 0; // a near-zero score demonstrates no proficiency; it must never raise readiness
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -97,6 +98,19 @@ export function computeTwin(profile: Profile, evidence: Evidence[], roleId: stri
   return { roleId, readiness, requirements, orderedGaps, strengths };
 }
 
+/** Indices of one longest strictly increasing subsequence of `xs` (O(n²), n is small). */
+function longestIncreasing(xs: number[]): number[] {
+  const len = xs.map(() => 1);
+  const prev = xs.map(() => -1);
+  for (let i = 0; i < xs.length; i++) {
+    for (let j = 0; j < i; j++) if (xs[j] < xs[i] && len[j] + 1 > len[i]) { len[i] = len[j] + 1; prev[i] = j; }
+  }
+  let end = len.indexOf(Math.max(0, ...len));
+  const out: number[] = [];
+  while (end >= 0) { out.unshift(end); end = prev[end]; }
+  return out;
+}
+
 export function diffMilestones(prev: RoadmapRevision | null, nextKeys: string[]): RevisionDiff | null {
   if (!prev) return null;
   const prevKeys = prev.milestones.map((m) => m.key);
@@ -104,7 +118,11 @@ export function diffMilestones(prev: RoadmapRevision | null, nextKeys: string[])
   const removed = prevKeys.filter((k) => !nextKeys.includes(k));
   const commonPrev = prevKeys.filter((k) => nextKeys.includes(k));
   const commonNext = nextKeys.filter((k) => prevKeys.includes(k));
-  const moved = commonNext.filter((k, i) => commonPrev[i] !== k);
+  // Items kept in relative order form the longest increasing subsequence of their previous positions;
+  // only the rest actually moved (so moving one milestone reports one move, not a cascade).
+  const pos = commonNext.map((k) => commonPrev.indexOf(k));
+  const keep = new Set(longestIncreasing(pos).map((i) => commonNext[i]));
+  const moved = commonNext.filter((k) => !keep.has(k));
   const unchanged = commonNext.filter((k) => !moved.includes(k));
   return { added, removed, moved, unchanged };
 }

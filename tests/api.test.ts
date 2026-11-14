@@ -48,6 +48,17 @@ describe('API validation & security', () => {
     assert.equal((await call('/profile', 'PUT', { ...s.profile, name: '' })).status, 400);
     assert.equal((await call('/goal', 'POST', { roleId: 'astronaut' })).status, 400);
   });
+  it('treats prototype property names as unknown IDs', async () => {
+    const { json: st } = await call('/state');
+    assert.equal((await call('/profile', 'PUT', { ...st.profile, targetRoleId: 'toString' })).status, 400);
+    assert.equal((await call('/goal', 'POST', { roleId: '__proto__' })).status, 400);
+    assert.equal((await call('/assessments/constructor')).status, 404);
+    assert.equal((await call('/state')).status, 200);
+  });
+  it('returns 400 for malformed JSON', async () => {
+    const res = await fetch(base + '/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{not json' });
+    assert.equal(res.status, 400);
+  });
   it('rejects milestone updates for unknown milestones', async () => {
     assert.equal((await call('/milestones/learn%3Anope', 'PATCH', { status: 'done' })).status, 404);
   });

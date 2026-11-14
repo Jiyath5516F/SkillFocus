@@ -1,5 +1,10 @@
 import type { Resource, RoleDef, SkillDef } from './types';
 
+/** Lookup table without a prototype, so IDs like "toString" or "__proto__" never resolve to built-ins. */
+export function indexById<T extends { id: string }>(items: T[]): Record<string, T> {
+  return Object.assign(Object.create(null) as Record<string, T>, Object.fromEntries(items.map((i) => [i.id, i])));
+}
+
 export const LEVEL_LABELS = ['None', 'Basic', 'Working', 'Proficient', 'Advanced'] as const;
 
 export const SKILLS: SkillDef[] = [
@@ -23,7 +28,7 @@ export const SKILLS: SkillDef[] = [
   { id: 'mlops', name: 'Model Deployment & MLOps', category: 'AI/ML', prereqs: ['ml', 'git'], defaultExercise: 'Serve a trained model behind an HTTP endpoint with versioning and a basic monitoring metric.' },
 ];
 
-export const SKILL_BY_ID: Record<string, SkillDef> = Object.fromEntries(SKILLS.map((s) => [s.id, s]));
+export const SKILL_BY_ID = indexById(SKILLS);
 
 export const ROLES: RoleDef[] = [
   {
@@ -71,7 +76,7 @@ export const ROLES: RoleDef[] = [
   },
 ];
 
-export const ROLE_BY_ID: Record<string, RoleDef> = Object.fromEntries(ROLES.map((r) => [r.id, r]));
+export const ROLE_BY_ID = indexById(ROLES);
 
 // Curated, free, well-known learning resources. Only these IDs may be recommended by agents.
 export const RESOURCES: Resource[] = [
@@ -142,7 +147,7 @@ export const RESOURCES: Resource[] = [
   { id: 'mlops-zoomcamp', skillId: 'mlops', title: 'MLOps Zoomcamp', provider: 'DataTalks.Club', url: 'https://github.com/DataTalksClub/mlops-zoomcamp', kind: 'course', hours: 30 },
 ];
 
-export const RESOURCE_BY_ID: Record<string, Resource> = Object.fromEntries(RESOURCES.map((r) => [r.id, r]));
+export const RESOURCE_BY_ID = indexById(RESOURCES);
 
 export const skillName = (id: string) => SKILL_BY_ID[id]?.name ?? id;
 

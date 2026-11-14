@@ -45,6 +45,7 @@ function aiLimit(req: Request, res: Response, next: NextFunction) {
 }
 
 const BUSY = 'Agents are busy with a previous request. Please wait a moment.';
+const RETAKE_COOLDOWN_MS = Number(process.env.MIRA_RETAKE_COOLDOWN_MIN ?? 10) * 60_000;
 
 const api = express.Router();
 
@@ -119,12 +120,18 @@ api.post('/assessments/:id/submit', aiLimit, (req, res) => {
   if (answered < def.questions.length) return res.status(400).json({ error: `Please answer all ${def.questions.length} questions (${answered} answered).` });
   if (store.activeRunId()) return res.status(409).json({ error: BUSY });
 
+  // The answer review is shown after each attempt, so immediate retakes are rate-limited.
+  const last = store.listAttempts().find((a) => a.assessmentId === def.id);
+  const waitMs = last ? RETAKE_COOLDOWN_MS - (Date.now() - new Date(last.createdAt).getTime()) : 0;
+  if (waitMs > 0) return res.status(429).json({ error: `Please review your feedback and practise first — you can retake this assessment in ${Math.ceil(waitMs / 60_000)} min.` });
+
   const before = currentSnapshot(); // Career Twin state just before this result is applied
   const t0 = Date.now();
   const g = grade(def, answers); // deterministic, against the answer key
   const profile = store.getProfile()!;
-  const requiredLevel = ROLE_BY_ID[profile.targetRoleId].requirements.find((r) => r.skillId === def.skillId)?.level ?? 2;
+  const requiredLevel = ROLE_BY_ID[profile.targetRoleId].requirements.find((r) => r.skillId === def.skillId)?.level ?? null;
   const attempt = store.addAttempt({ assessmentId: def.id, skillId: def.skillId, ...g, diagnosis: null, createdAt: store.now() });
+  store.clearRemediationProgress(def.skillId); // remediation restarts from this attempt's weak concepts
   store.addEvidence({ skillId: def.skillId, source: 'assessment', level: g.verifiedLevel, detail: `${def.title} attempt #${attempt.id}: ${g.score}%`, refId: `attempt:${attempt.id}` });
   const gradingMs = Date.now() - t0;
   try {
@@ -205,6 +212,9 @@ if (existsSync(dist)) {
 }
 
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  const status = (err as { status?: number }).status;
+  if (status === 400) return res.status(400).json({ error: 'Malformed JSON body' });
+  if (status === 413) return res.status(413).json({ error: 'Request body too large' });
   console.error(err);
   res.status(500).json({ error: 'Unexpected server error' });
 });

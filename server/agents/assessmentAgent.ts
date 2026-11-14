@@ -18,7 +18,7 @@ From the wrong answers, infer the most likely misconceptions.
 - concepts: one entry per weak concept ID provided (use the exact concept IDs), with the likely misconception and one concrete practice tip.
 - focus: one sentence telling the Learning Path Architect what remediation should target.`;
 
-export async function runAssessmentAgent(def: AssessmentDef, attempt: Omit<AssessmentAttempt, 'id'>, requiredLevel: number): Promise<LLMResult<AssessmentOutput>> {
+export async function runAssessmentAgent(def: AssessmentDef, attempt: Omit<AssessmentAttempt, 'id'>, requiredLevel: number | null): Promise<LLMResult<AssessmentOutput>> {
   const qById = Object.fromEntries(def.questions.map((q) => [q.id, q]));
   const input = {
     assessment: def.title, scorePercent: attempt.score, verifiedLevel: attempt.verifiedLevel, roleRequiredLevel: requiredLevel,

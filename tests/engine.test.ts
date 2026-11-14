@@ -13,6 +13,7 @@ const ev = (skillId: string, source: Evidence['source'], level: number, createdA
 
 describe('scoreToLevel', () => {
   it('maps score bands to verified levels', () => {
+    assert.equal(scoreToLevel(0), 0, 'a near-zero score never raises readiness');
     assert.equal(scoreToLevel(25), 1);
     assert.equal(scoreToLevel(40), 2);
     assert.equal(scoreToLevel(70), 3);
@@ -83,6 +84,10 @@ describe('diffMilestones', () => {
     assert.deepEqual(d.removed, []);
     assert.ok(d.moved.length > 0);
     assert.equal(diffMilestones(null, ['a']), null);
+  });
+  it('reports a single moved milestone, not a cascade', () => {
+    const prev = { milestones: [{ key: 'a' }, { key: 'b' }, { key: 'c' }, { key: 'd' }] } as unknown as RoadmapRevision;
+    assert.deepEqual(diffMilestones(prev, ['b', 'c', 'd', 'a'])!.moved, ['a']);
   });
 });
 

@@ -141,7 +141,8 @@ export function listRuns(limit = 15): AgentRun[] {
   }));
 }
 export function activeRunId(): number | null {
-  const r = db.prepare("SELECT id FROM agent_run WHERE status = 'running' ORDER BY id DESC LIMIT 1").get() as Row | undefined;
+  // Mentor chats run independently and must not block orchestrated runs.
+  const r = db.prepare("SELECT id FROM agent_run WHERE status = 'running' AND trigger != 'mentor_question' ORDER BY id DESC LIMIT 1").get() as Row | undefined;
   return r ? (r.id as number) : null;
 }
 export function failStaleRuns() {
@@ -164,4 +165,13 @@ export function resetAll() {
 }
 export function deleteEvidenceByRef(refId: string) {
   db.prepare('DELETE FROM skill_evidence WHERE ref_id = ?').run(refId);
+}
+
+/** A new attempt restarts remediation for that skill: earlier "done" marks on fix:<skill>:* no longer apply. */
+export function clearRemediationProgress(skillId: string) {
+  db.prepare("DELETE FROM milestone_progress WHERE key LIKE ? ESCAPE '\\'").run(`fix:${skillId.replace(/[%_\\]/g, '\\$&')}:%`);
+}
+
+export function deleteEvidenceById(id: number) {
+  db.prepare('DELETE FROM skill_evidence WHERE id = ?').run(id);
 }

@@ -1,4 +1,5 @@
 // Assessment banks with answer keys. Server-only: answer keys never reach the client.
+import { indexById } from '../shared/catalog';
 import type { PublicAssessment } from '../shared/types';
 
 interface Question { id: string; concept: string; prompt: string; code?: string; options: string[]; answer: number; explanation: string }
@@ -50,7 +51,7 @@ export const ASSESSMENTS: AssessmentDef[] = [
   },
 ];
 
-export const ASSESSMENT_BY_ID: Record<string, AssessmentDef> = Object.fromEntries(ASSESSMENTS.map((a) => [a.id, a]));
+export const ASSESSMENT_BY_ID = indexById(ASSESSMENTS);
 
 export function toPublic(a: AssessmentDef): PublicAssessment {
   return {

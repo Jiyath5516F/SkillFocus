@@ -95,7 +95,12 @@ async function skillIntelligenceStep(ctx: RunCtx, mode: 'full' | 'reassess') {
     () => runSkillIntelligence(profile, attempts),
     (d) => `${d.links.length} evidence links proposed · strengths: ${d.strengths.slice(0, 2).join('; ')}`);
   if (!intel) {
-    ctx.fallback('Skill Intelligence', 'AI unavailable', 'Kept existing evidence links; skill estimates use self-reports and assessments only.');
+    if (mode === 'full') {
+      // Without the agent we cannot add links, but links to deleted certifications/projects must not survive.
+      const names = new Set([...profile.certifications.map((c) => c.name), ...profile.projects.map((p) => p.name)]);
+      for (const e of store.listEvidence()) if (e.source === 'project_link' && !names.has(e.refId ?? '')) store.deleteEvidenceById(e.id);
+    }
+    ctx.fallback('Skill Intelligence', 'AI unavailable', 'Kept links to existing certifications/projects; estimates use self-reports and assessments only.');
     return;
   }
   if (mode === 'full') {
@@ -175,10 +180,10 @@ export function startGoalChange(fromRole: string, toRole: string): number {
   }));
 }
 
-export function startAssessmentRun(def: AssessmentDef, attempt: AssessmentAttempt, gradingMs: number, requiredLevel: number, before: RevisionSnapshot): number {
+export function startAssessmentRun(def: AssessmentDef, attempt: AssessmentAttempt, gradingMs: number, requiredLevel: number | null, before: RevisionSnapshot): number {
   return launch('assessment', async (ctx) => {
     const sid = store.startStep(ctx.runId, 'Assessment & Progress', 'deterministic', null, `Grade ${attempt.total} answers against the answer key`);
-    store.endStep(sid, { status: 'completed', durationMs: gradingMs, outputSummary: `Score ${attempt.score}% (${attempt.correct}/${attempt.total}) → verified level ${attempt.verifiedLevel} (role needs ${requiredLevel}) · weak: ${attempt.weakConcepts.join(', ') || 'none'}` });
+    store.endStep(sid, { status: 'completed', durationMs: gradingMs, outputSummary: `Score ${attempt.score}% (${attempt.correct}/${attempt.total}) → verified level ${attempt.verifiedLevel} (${requiredLevel === null ? 'not required by the current goal' : `role needs ${requiredLevel}`}) · weak: ${attempt.weakConcepts.join(', ') || 'none'}` });
 
     // Independent → parallel: the diagnosis (for the Path Architect) and the Skill Intelligence re-assessment.
     const [diag] = await Promise.all([
@@ -186,19 +191,21 @@ export function startAssessmentRun(def: AssessmentDef, attempt: AssessmentAttemp
         () => runAssessmentAgent(def, attempt, requiredLevel), (d) => d.focus),
       skillIntelligenceStep(ctx, 'reassess'),
     ]);
-    const adapt = attempt.verifiedLevel < requiredLevel;
+    const below = requiredLevel !== null && attempt.verifiedLevel < requiredLevel;
+    const remediation = below && attempt.weakConcepts.length > 0; // buildSlots adds fix:<skill>:<concept> exactly in this case
     if (diag) {
       const conceptNotes = diag.concepts.filter((c) => attempt.weakConcepts.includes(c.concept)).map((c) => `${def.concepts[c.concept]}: ${c.misconception} Tip: ${c.advice}`);
       store.updateAttempt({ ...attempt, diagnosis: [diag.diagnosis, ...conceptNotes].join('\n') });
     }
     await planFlow(ctx, {
-      trigger: adapt
-        ? `Assessment #${attempt.id} (${def.title}) scored ${attempt.score}% — below the required level; targeted remediation added`
-        : `Assessment #${attempt.id} (${def.title}) scored ${attempt.score}% — skill verified`,
+      trigger: `Assessment #${attempt.id} (${def.title}) scored ${attempt.score}% — ${
+        remediation ? 'below the required level; targeted remediation added'
+          : below ? 'below the required level'
+            : requiredLevel === null ? 'recorded (skill not required by the current goal)' : 'skill verified'}`,
       skillIntel: 'none', // already re-assessed above, in parallel with the diagnosis
       before,
       diagnosis: diag ? `${diag.diagnosis} Focus: ${diag.focus}` : `Weak concepts: ${attempt.weakConcepts.join(', ')}`,
-      event: `The learner completed the ${def.title} assessment: ${attempt.correct}/${attempt.total} (${attempt.score}%), verified level ${attempt.verifiedLevel} vs required ${requiredLevel}. Weak concepts: ${attempt.weakConcepts.join(', ') || 'none'}.`,
+      event: `The learner completed the ${def.title} assessment: ${attempt.correct}/${attempt.total} (${attempt.score}%), verified level ${attempt.verifiedLevel}${requiredLevel === null ? ' (skill not required by the current goal)' : ` vs required ${requiredLevel}`}. Weak concepts: ${attempt.weakConcepts.join(', ') || 'none'}.`,
     });
   });
 }

@@ -111,7 +111,7 @@ The **Agent activity** drawer shows each run as it executes: agent, status, time
 - A single-learner prototype with no authentication. A preloaded demo learner and a reset button keep the demo reproducible.
 - Role requirements are **illustrative benchmarks**, not universal hiring standards.
 - Skills use a 0–4 scale (None, Basic, Working, Proficient, Advanced).
-- Score bands map to levels: <40% → Basic, 40–69% → Working, 70–89% → Proficient, ≥90% → Advanced. Any concept scored below 50% is "weak".
+- Score bands map to levels: <20% → None, 20–39% → Basic, 40–69% → Working, 70–89% → Proficient, ≥90% → Advanced. Any concept scored below 50% is "weak". After an attempt the learner sees an answer review, so retakes of the same assessment have a cooldown (`MIRA_RETAKE_COOLDOWN_MIN`, default 10 minutes), and a new attempt resets that skill's remediation progress.
 - Assessments are short multiple-choice checks (JavaScript: 8 questions; SQL: 5; Python: 6) graded deterministically. No free-text AI grading.
 - The resources are a curated set of 48 well-known free resources. Links were checked when the catalog was built; a few sites block automated checks.
 
@@ -154,8 +154,8 @@ The acceptance tests cover the three required scenarios:
 
 - The API key lives only on the server, loaded from `.env` or the environment, and is never logged. `.env` is git-ignored.
 - **Input validation:** every input is checked with zod (profile, goal, answers, milestone status, chat). The JSON body limit is 100 kB and skill entries are de-duplicated.
-- **Answer keys** never leave the server; the client receives questions only.
-- **Untrusted input:** learner text is treated as data. Model outputs are whitelisted against the catalogs and never executed.
+- **Answer keys** never reach the client before an attempt; only the post-attempt review shows correct answers, and retakes are rate-limited by a cooldown.
+- **Untrusted input:** learner text is treated as data. Catalog lookups use prototype-free tables, so IDs like `__proto__` or `toString` are simply unknown. Model outputs are whitelisted against the catalogs and never executed.
 - **Headers:** CSP, `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`.
 - **Limits:** per-client rate limit on AI endpoints, plus timeouts and a bounded retry on model calls.
 - **Production hardening:** a systemd unit with a dedicated user and a sandbox (`ProtectSystem=strict`, `NoNewPrivileges`).

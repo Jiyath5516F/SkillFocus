@@ -5,7 +5,7 @@ import type { Confidence, RequirementResult } from '../../../shared/types';
 
 export function Card({ children, className = '', title, action, subtitle }: { children: ReactNode; className?: string; title?: ReactNode; action?: ReactNode; subtitle?: ReactNode }) {
   return (
-    <section className={`rounded-lg border border-line bg-card p-5 ${className}`}>
+    <section className={`min-w-0 rounded-lg border border-line bg-card p-5 ${className}`}>
       {(title || action) && (
         <header className="mb-4 flex items-start justify-between gap-3">
           <div>

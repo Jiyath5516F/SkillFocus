@@ -1,12 +1,12 @@
 import { Radio, RadioGroup } from '@headlessui/react';
 import { CheckCircleIcon, PlusIcon, XMarkIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
-import { LEVEL_LABELS, SKILLS, registerRoles, skillName } from '../../../shared/catalog';
+import { LEVEL_LABELS, SKILLS, registerRoles, registerSkills, skillName } from '../../../shared/catalog';
 import type { Profile } from '../../../shared/types';
 import { api, type Meta } from '../api';
 import { AimDesigner } from '../components/AimDesigner';
 import { MiraAvatar } from '../components/MiraAvatar';
-import { SelectMenu, TextAreaField, TextField } from '../components/hui';
+import { SelectMenu, SkillCombobox, TextAreaField, TextField } from '../components/hui';
 import { Button, Spinner } from '../components/ui';
 
 const STEPS = ['Your goal', 'Your skills', 'About you'] as const;
@@ -29,7 +29,14 @@ export function Onboarding({ meta, profile, onDone }: { meta: Meta; profile: Pro
     setBusy(true);
     try { await api.reset(); onDone(null); } catch (e) { setError((e as Error).message); setBusy(false); }
   };
-  const available = SKILLS.filter((s) => !p.skills.some((x) => x.skillId === s.id)).map((s) => ({ value: s.id, label: s.name }));
+  const available = [...SKILLS, ...(p.customSkills ?? [])].filter((s) => !p.skills.some((x) => x.skillId === s.id)).map((s) => ({ id: s.id, name: s.name }));
+  const addTyped = async (name: string) => {
+    try {
+      const { skill } = await api.addSkill(name);
+      registerSkills([skill]);
+      setP((cur) => ({ ...cur, customSkills: skill.id.startsWith('cs-') ? [...(cur.customSkills ?? []).filter((x) => x.id !== skill.id), skill] : cur.customSkills, skills: cur.skills.some((x) => x.skillId === skill.id) ? cur.skills : [...cur.skills, { skillId: skill.id, selfLevel: 1 }] }));
+    } catch (e) { setError((e as Error).message); }
+  };
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
@@ -70,7 +77,7 @@ export function Onboarding({ meta, profile, onDone }: { meta: Meta; profile: Pro
                   </Radio>
                 ))}
               </RadioGroup>
-              <AimDesigner onSelect={(r) => setP({ ...p, customRoles: [r, ...(p.customRoles ?? [])], targetRoleId: r.id })} />
+              <AimDesigner onSelect={(r, skills) => setP({ ...p, customSkills: skills, customRoles: [r, ...(p.customRoles ?? [])], targetRoleId: r.id })} />
               <SelectMenu label="How much time can you study each week?" value={p.weeklyHours} onChange={(v) => set('weeklyHours', v)} options={HOURS.some((h) => h.value === p.weeklyHours) ? HOURS : [...HOURS, { value: p.weeklyHours, label: `${p.weeklyHours} hours / week` }]} className="max-w-xs" />
             </div>
           )}
@@ -94,7 +101,7 @@ export function Onboarding({ meta, profile, onDone }: { meta: Meta; profile: Pro
                   </li>
                 ))}
               </ul>
-              {available.length > 0 && <SelectMenu label="Add a skill" value={null} placeholder="Choose a skill…" options={available} onChange={(id) => set('skills', [...p.skills, { skillId: id, selfLevel: 1 }])} />}
+              <SkillCombobox label="Add a skill" options={available} onPick={(id) => set('skills', [...p.skills, { skillId: id, selfLevel: 1 }])} onCreate={addTyped} />
             </div>
           )}
 

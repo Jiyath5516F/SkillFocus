@@ -5,7 +5,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { registerRoles } from '../shared/catalog';
+import { registerRoles, registerSkills } from '../shared/catalog';
 import type {
   AgentRun, AgentStep, AssessmentAttempt, Evidence, MentorMessage, MilestoneProgress, MilestoneStatus, Profile, RoadmapRevision,
 } from '../shared/types';
@@ -78,6 +78,7 @@ export function getProfile(): Profile | null {
   const row = cur().prepare('SELECT profile FROM learner WHERE id = 1').get() as Row | undefined;
   if (!row) return null;
   const profile = JSON.parse(row.profile as string) as Profile;
+  registerSkills(profile.customSkills); // custom skills first: custom aims may require them
   registerRoles(profile.customRoles); // make this learner's custom aims resolvable by the engine
   return profile;
 }

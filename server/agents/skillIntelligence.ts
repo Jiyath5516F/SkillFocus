@@ -25,7 +25,7 @@ Rules:
 
 export async function runSkillIntelligence(profile: Profile, attempts: AssessmentAttempt[]): Promise<LLMResult<SkillIntelOutput>> {
   const input = {
-    catalogSkillIds: SKILLS.map((s) => ({ id: s.id, name: s.name })),
+    catalogSkillIds: [...SKILLS, ...(profile.customSkills ?? [])].map((s) => ({ id: s.id, name: s.name })),
     learner: {
       background: profile.background, currentRole: profile.currentRole, interests: profile.interests,
       selfReportedSkills: profile.skills.map((s) => ({ skill: SKILL_BY_ID[s.skillId]?.name ?? s.skillId, skillId: s.skillId, selfLevel: s.selfLevel })),

@@ -27,7 +27,7 @@ export interface CohortReport {
 
 export interface Meta { roles: RoleDef[]; skills: SkillDef[]; resources: Resource[]; assessments: { id: string; skillId: string; title: string; questions: number }[] }
 
-export interface DesignedRole { title: string; summary: string; requirements: { skillId: string; level: number; weight: number }[] }
+export interface DesignedRole { title: string; summary: string; requirements: { skillId?: string; name?: string; level: number; weight: number }[] }
 
 export interface SessionUser { id: number; name: string; email: string }
 
@@ -50,6 +50,7 @@ export const api = {
   ask: (message: string) => req<MentorMessage[]>('/mentor', { method: 'POST', body: JSON.stringify({ message }) }),
   reset: () => req<AppState>('/demo/reset', { method: 'POST' }),
   suggestRoles: (aim: string, avoid: string[]) => req<{ options: DesignedRole[] }>('/roles/suggest', { method: 'POST', body: JSON.stringify({ aim, avoid }) }),
-  createRole: (role: DesignedRole) => req<{ role: RoleDef }>('/roles', { method: 'POST', body: JSON.stringify(role) }),
+  createRole: (role: DesignedRole) => req<{ role: RoleDef; skills: SkillDef[] }>('/roles', { method: 'POST', body: JSON.stringify(role) }),
+  addSkill: (name: string) => req<{ skill: SkillDef }>('/skills', { method: 'POST', body: JSON.stringify({ name }) }),
   cohort: (role: string) => req<CohortReport>(`/cohort?role=${encodeURIComponent(role)}`),
 };

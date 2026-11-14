@@ -1,9 +1,9 @@
 // Styled Headless UI primitives (Tailwind / headlessui.com look) used across Mira.
 import {
-  Checkbox, Description, Dialog, DialogBackdrop, DialogPanel, DialogTitle, Field, Input, Label,
+  Checkbox, Combobox, ComboboxInput, ComboboxOption, ComboboxOptions, Description, Dialog, DialogBackdrop, DialogPanel, DialogTitle, Field, Input, Label,
   Listbox, ListboxButton, ListboxOption, ListboxOptions, Radio, RadioGroup, Textarea,
 } from '@headlessui/react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 // Dark style mirrors the Headless UI documentation examples (bg-white/5 surfaces, white/25 focus outlines).
 const inputCls = 'block w-full rounded-lg border-none bg-white/5 px-3 py-1.5 text-sm/6 text-white placeholder:text-white/50 focus:outline-2 focus:-outline-offset-2 focus:outline-white/25';
@@ -105,5 +105,38 @@ export function ConfirmDialog({ open, title, children, confirmLabel, onConfirm, 
         </DialogPanel>
       </div>
     </Dialog>
+  );
+}
+
+/**
+ * Type-ahead skill picker (Headless UI Combobox): choose a known skill, or add exactly what you typed as a new skill.
+ */
+export function SkillCombobox({ label, options, onPick, onCreate }: {
+  label: string; options: { id: string; name: string }[]; onPick: (id: string) => void; onCreate: (name: string) => void | Promise<void>;
+}) {
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+  const filtered = q ? options.filter((o) => o.name.toLowerCase().includes(q)).slice(0, 8) : options.slice(0, 8);
+  const exact = options.some((o) => o.name.toLowerCase() === q);
+  const NEW = '__new__';
+  return (
+    <Field>
+      <Label className="mb-1 block text-sm font-medium text-white">{label}</Label>
+      <Combobox value={null} onChange={(v: string | null) => { if (!v) return; if (v === NEW) void onCreate(query.trim()); else onPick(v); setQuery(''); }} onClose={() => setQuery('')}>
+        <ComboboxInput placeholder="Type a skill, e.g. KiCad, Figma, React…" displayValue={() => query} onChange={(e) => setQuery(e.target.value)} className={inputCls} />
+        <ComboboxOptions anchor="bottom start" transition
+          className="z-50 max-h-64 w-(--input-width) overflow-auto rounded-xl border border-white/5 bg-neutral-900/95 p-1 text-sm shadow-2xl backdrop-blur-xl [--anchor-gap:4px] empty:invisible transition duration-100 ease-in data-leave:data-closed:opacity-0">
+          {filtered.map((o) => (
+            <ComboboxOption key={o.id} value={o.id} className="cursor-default rounded-lg px-3 py-1.5 text-white select-none data-focus:bg-white/10">{o.name}</ComboboxOption>
+          ))}
+          {q.length >= 2 && !exact && (
+            <ComboboxOption value={NEW} className="cursor-default rounded-lg px-3 py-1.5 text-indigo-300 select-none data-focus:bg-white/10">
+              + Add “{query.trim()}” as a new skill
+            </ComboboxOption>
+          )}
+        </ComboboxOptions>
+      </Combobox>
+      <Description className="mt-1 text-xs text-white/60">Not in the list? Type it and add it. New skills get search-based learning links.</Description>
+    </Field>
   );
 }

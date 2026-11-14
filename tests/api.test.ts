@@ -140,6 +140,31 @@ describe('custom career aims', () => {
     const mine = (await call('/state')).json;
     assert.ok(mine.profile.customRoles.some((r: { id: string }) => r.id === role.id));
   });
+  it('adds typed skills: catalog names are reused, new names become owned custom skills with search resources', async () => {
+    const reused = await call('/skills', 'POST', { name: 'python' });
+    assert.equal(reused.json.skill.id, 'python');
+    const created = await call('/skills', 'POST', { name: 'KiCad' });
+    assert.equal(created.status, 201);
+    const kicad = created.json.skill;
+    assert.match(kicad.id, /^cs-/);
+    const { json: st } = await call('/state');
+    assert.equal((await call('/profile?analyze=false', 'PUT', { ...st.profile, skills: [{ skillId: kicad.id, selfLevel: 2 }] })).status, 200);
+    const other = await call('/auth/login', 'POST', { email: 'intruder@example.com', password: 'intruder-pass-1' }, null);
+    const otherState = (await call('/state', 'GET', undefined, sessionFrom(other.headers))).json;
+    const r = await call('/profile?analyze=false', 'PUT', { ...otherState.profile, skills: [{ skillId: kicad.id, selfLevel: 2 }] }, sessionFrom(other.headers));
+    assert.equal(r.status, 400, "cannot claim another learner's custom skill");
+  });
+  it('turns new skill names in a designed aim into custom skills', async () => {
+    const r = await call('/roles', 'POST', { title: 'PCB Designer', summary: 'Designs circuit boards.', requirements: [
+      { name: 'PCB layout', level: 3, weight: 3 }, { name: 'Circuit design', level: 2, weight: 2 }, { skillId: 'git', level: 2, weight: 1 }] });
+    assert.equal(r.status, 201);
+    assert.equal(r.json.role.requirements.length, 3);
+    assert.ok(r.json.role.requirements.slice(0, 2).every((q: { skillId: string }) => q.skillId.startsWith('cs-')));
+    const goal = await call('/profile?analyze=false', 'PUT', { ...(await call('/state')).json.profile, targetRoleId: r.json.role.id });
+    assert.equal(goal.status, 200);
+    const twin = (await call('/state')).json.twin;
+    assert.ok(twin.orderedGaps.some((id: string) => id.startsWith('cs-')), 'custom skills are real requirements in the Career Twin');
+  });
   it('rejects aims without enough catalog skills', async () => {
     assert.equal((await call('/roles', 'POST', { title: 'X', summary: '', requirements: [{ skillId: 'nope', level: 1, weight: 1 }, { skillId: 'nah', level: 1, weight: 1 }, { skillId: 'no', level: 1, weight: 1 }] })).status, 400);
   });
@@ -147,6 +172,7 @@ describe('custom career aims', () => {
 
 describe('graceful degradation without AI', () => {
   it('still produces a clearly labelled rule-based roadmap', async () => {
+    await call('/demo/reset', 'POST'); // independent of earlier tests' profile changes
     const { json } = await call('/analyze', 'POST');
     let run: AgentRun;
     do { run = (await call(`/runs/${json.runId}`)).json; } while (run.status === 'running');

@@ -23,7 +23,7 @@ export interface RoleDef {
   requirements: RoleRequirement[];
 }
 
-export type ResourceKind = 'course' | 'tutorial' | 'docs' | 'book' | 'practice';
+export type ResourceKind = 'course' | 'tutorial' | 'docs' | 'book' | 'practice' | 'search';
 
 export interface Resource {
   id: string;
@@ -64,8 +64,10 @@ export interface Profile {
   weeklyHours: number;
   /** false only for new accounts that haven't finished (or skipped) the setup wizard. */
   onboarded?: boolean;
-  /** Career aims the learner designed with Mira (requirements use catalog skills only). */
+  /** Career aims the learner designed with Mira. */
   customRoles?: RoleDef[];
+  /** Skills the learner (or Mira's role designer) added beyond the built-in catalog. */
+  customSkills?: SkillDef[];
 }
 
 export type EvidenceSource = 'milestone_claim' | 'project_link' | 'assessment';

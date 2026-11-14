@@ -156,6 +156,39 @@ export const RESOURCE_BY_ID = indexById(RESOURCES);
 
 export const skillName = (id: string) => SKILL_BY_ID[id]?.name ?? id;
 
+/**
+ * Custom skills (added by the learner or proposed for a custom aim) are registered at runtime.
+ * They have no curated course list, so they get transparent *search* links instead of invented URLs.
+ */
+export function registerSkills(skills: SkillDef[] | undefined) {
+  for (const sk of skills ?? []) {
+    if (!sk.id.startsWith('cs-') || SKILL_BY_ID[sk.id]) continue;
+    SKILL_BY_ID[sk.id] = sk;
+    const q = encodeURIComponent(sk.name);
+    for (const r of [
+      { id: `${sk.id}~yt`, title: `${sk.name} tutorials (YouTube search)`, provider: 'YouTube', url: `https://www.youtube.com/results?search_query=${q}+tutorial`, hours: 6 },
+      { id: `${sk.id}~coursera`, title: `${sk.name} courses (Coursera search)`, provider: 'Coursera', url: `https://www.coursera.org/search?query=${q}`, hours: 10 },
+    ]) {
+      const res: Resource = { ...r, skillId: sk.id, kind: 'search' };
+      RESOURCES.push(res);
+      RESOURCE_BY_ID[res.id] = res;
+    }
+  }
+}
+
+/** Builds a custom skill definition for a free-text skill name. */
+export function customSkill(ownerId: number | string, name: string): SkillDef {
+  const clean = name.trim().replace(/\s+/g, ' ').slice(0, 60);
+  const slug = clean.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'skill';
+  return { id: `cs-${ownerId}-${slug}`, name: clean, category: 'Custom', prereqs: [], defaultExercise: `Build a small, real project that uses ${clean} and write down what you learned.` };
+}
+
+/** Finds a catalog or registered skill by id or (case-insensitive) name. */
+export function findSkill(idOrName: string): SkillDef | undefined {
+  const k = idOrName.trim().toLowerCase();
+  return SKILL_BY_ID[idOrName] ?? Object.values(SKILL_BY_ID).find((s) => s.name.toLowerCase() === k || s.id === k);
+}
+
 /** Human-readable label for a stable milestone key (learn:<skill> | fix:<skill>:<concept>). */
 export function milestoneLabel(key: string): string {
   const [kind, skill, concept] = key.split(':');

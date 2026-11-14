@@ -1,13 +1,13 @@
 import { ArrowPathIcon, CheckIcon, SparklesIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
-import { LEVEL_LABELS, skillName } from '../../../shared/catalog';
-import type { RoleDef } from '../../../shared/types';
+import { LEVEL_LABELS, registerSkills, skillName } from '../../../shared/catalog';
+import type { RoleDef, SkillDef } from '../../../shared/types';
 import { api, type DesignedRole } from '../api';
 import { MiraAvatar } from './MiraAvatar';
 import { Button, Spinner } from './ui';
 
 /** Type any career aim; Mira designs 3 role profiles from catalog skills; shuffle for alternatives; pick one. */
-export function AimDesigner({ onSelect }: { onSelect: (role: RoleDef) => void | Promise<void> }) {
+export function AimDesigner({ onSelect }: { onSelect: (role: RoleDef, skills: SkillDef[]) => void | Promise<void> }) {
   const [aim, setAim] = useState('');
   const [options, setOptions] = useState<DesignedRole[]>([]);
   const [seen, setSeen] = useState<string[]>([]);
@@ -26,7 +26,7 @@ export function AimDesigner({ onSelect }: { onSelect: (role: RoleDef) => void | 
   };
   const use = async (o: DesignedRole) => {
     setBusy('use'); setError(null);
-    try { await onSelect((await api.createRole(o)).role); setOptions([]); setAim(''); } catch (e) { setError((e as Error).message); } finally { setBusy(null); }
+    try { const r = await api.createRole(o); registerSkills(r.skills); await onSelect(r.role, r.skills); setOptions([]); setAim(''); } catch (e) { setError((e as Error).message); } finally { setBusy(null); }
   };
 
   return (
@@ -42,7 +42,7 @@ export function AimDesigner({ onSelect }: { onSelect: (role: RoleDef) => void | 
       {options.length > 0 && (
         <>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-white/60">Built only from skills Mira can assess and teach. Illustrative benchmarks, not hiring standards.</p>
+            <p className="text-xs text-white/60">Uses Mira's catalog where it fits and adds domain skills (✦ new) where it doesn't. Illustrative benchmarks, not hiring standards.</p>
             <Button variant="ghost" onClick={() => ask(true)} disabled={busy !== null}><ArrowPathIcon aria-hidden className={`size-4 ${busy === 'ask' ? 'animate-spin' : ''}`} /> Shuffle</Button>
           </div>
           <ul className="mt-2 grid gap-3 @lg:grid-cols-2 @3xl:grid-cols-3">
@@ -52,8 +52,8 @@ export function AimDesigner({ onSelect }: { onSelect: (role: RoleDef) => void | 
                 <p className="mt-1 text-xs text-white/60">{o.summary}</p>
                 <ul className="mt-3 flex flex-wrap gap-1">
                   {o.requirements.map((q) => (
-                    <li key={q.skillId} className={`max-w-full rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset break-words ${q.weight === 3 ? 'bg-indigo-400/10 text-indigo-300 ring-indigo-400/30' : 'bg-white/5 text-white/80 ring-white/10'}`}>
-                      {skillName(q.skillId)} · {LEVEL_LABELS[q.level]}
+                    <li key={q.skillId ?? q.name} title={q.skillId ? undefined : 'New skill — added to your profile when you pick this aim'} className={`max-w-full rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset break-words ${q.weight === 3 ? 'bg-indigo-400/10 text-indigo-300 ring-indigo-400/30' : 'bg-white/5 text-white/80 ring-white/10'}`}>
+                      {q.skillId ? skillName(q.skillId) : q.name}{!q.skillId && <span className="ml-1 text-emerald-300">✦ new</span>} · {LEVEL_LABELS[q.level]}
                     </li>
                   ))}
                 </ul>

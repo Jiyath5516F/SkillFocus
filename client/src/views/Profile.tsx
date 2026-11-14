@@ -1,12 +1,12 @@
 import { CheckIcon, SparklesIcon, XMarkIcon } from '@heroicons/react/20/solid';
 import { useEffect, useState } from 'react';
-import { LEVEL_LABELS, SKILLS, skillName } from '../../../shared/catalog';
+import { LEVEL_LABELS, SKILLS, registerSkills, skillName } from '../../../shared/catalog';
 import type { Profile } from '../../../shared/types';
 import { useApp } from '../App';
 import { AimDesigner } from '../components/AimDesigner';
 import { allRoles } from '../roles';
 import { api } from '../api';
-import { SelectMenu, TextAreaField, TextField } from '../components/hui';
+import { SelectMenu, SkillCombobox, TextAreaField, TextField } from '../components/hui';
 import { Badge, Button, Card } from '../components/ui';
 
 const LEVEL_OPTIONS = LEVEL_LABELS.slice(1).map((label, i) => ({ value: i + 1, label }));
@@ -26,7 +26,14 @@ export function ProfileView() {
     try { track((await api.changeGoal(roleId)).runId); } catch (e) { notify((e as Error).message); }
   };
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => setP({ ...p, [k]: v });
-  const available = SKILLS.filter((s) => !p.skills.some((x) => x.skillId === s.id)).map((s) => ({ value: s.id, label: s.name }));
+  const available = [...SKILLS, ...(state.profile.customSkills ?? [])].filter((s) => !p.skills.some((x) => x.skillId === s.id)).map((s) => ({ id: s.id, name: s.name }));
+  const addTyped = async (name: string) => {
+    try {
+      const { skill } = await api.addSkill(name);
+      registerSkills([skill]);
+      setP((cur) => (cur.skills.some((x) => x.skillId === skill.id) ? cur : { ...cur, skills: [...cur.skills, { skillId: skill.id, selfLevel: 1 }] }));
+    } catch (e) { notify((e as Error).message); }
+  };
 
   return (
     <div className="space-y-6">
@@ -81,8 +88,7 @@ export function ProfileView() {
             ))}
           </ul>
           {available.length > 0 && (
-            <SelectMenu label="Add a skill" className="mt-4" value={null} placeholder="Choose a skill to add…" options={available}
-              onChange={(id) => set('skills', [...p.skills, { skillId: id, selfLevel: 1 }])} />
+            <div className="mt-4"><SkillCombobox label="Add a skill" options={available} onPick={(id) => set('skills', [...p.skills, { skillId: id, selfLevel: 1 }])} onCreate={addTyped} /></div>
           )}
         </Card>
 

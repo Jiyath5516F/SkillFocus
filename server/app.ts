@@ -3,10 +3,10 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
-import { ROLES, ROLE_BY_ID, RESOURCES, SKILLS, SKILL_BY_ID, registerRoles } from '../shared/catalog';
+import { ROLES, ROLE_BY_ID, RESOURCES, SKILLS, customSkill, registerRoles, registerSkills } from '../shared/catalog';
 import type { MilestoneStatus } from '../shared/types';
 import { mentorReply } from './agents/mentor';
-import { designRoles, sanitizeRole } from './agents/roleDesigner';
+import { designRoles, resolveSkill, sanitizeRole } from './agents/roleDesigner';
 import {
   authenticate, clearSessionCookie, createSession, createUser, deleteSession, findUserByEmail, readSessionCookie, setSessionCookie, tooManyAttempts, userForSession, type User,
 } from './auth';
@@ -145,13 +145,14 @@ api.put('/profile', aiLimit, (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: 'Invalid profile', details: parsed.error.issues.slice(0, 5).map((i) => `${i.path.join('.')}: ${i.message}`) });
   const p = parsed.data;
   if (!roleAllowed(p.targetRoleId)) return res.status(400).json({ error: 'Unknown career goal' });
-  const unknown = p.skills.find((s) => !SKILL_BY_ID[s.skillId]);
+  const own = store.getProfile();
+  const unknown = p.skills.find((s) => !resolveSkill(s.skillId, own)); // built-in or this learner's own custom skill
   if (unknown) return res.status(400).json({ error: `Unknown skill: ${unknown.skillId}` });
   // De-duplicate skills (keep the last entry for each skill).
   const skills = [...new Map(p.skills.map((s) => [s.skillId, s])).values()].filter((s) => s.selfLevel > 0);
   try {
     if (store.activeRunId()) throw new BusyError(BUSY);
-    store.saveProfile({ ...p, skills, customRoles: store.getProfile()?.customRoles }); // custom aims are managed by /roles
+    store.saveProfile({ ...p, skills, customRoles: own?.customRoles, customSkills: own?.customSkills }); // managed by /roles and /skills
     // ?analyze=false saves without running the agents (e.g. "Skip for now" in the setup wizard).
     res.json({ runId: req.query.analyze === 'false' ? null : startAnalyze('profile_updated') });
   } catch (e) { sendErr(res, e); }
@@ -182,8 +183,8 @@ api.post('/roles/suggest', aiLimit, async (req, res) => {
   const t0 = Date.now();
   const stepId = store.startStep(runId, 'Career Matching', 'llm', MODEL, `Design role profiles for aim: "${body.data.aim.slice(0, 120)}"`);
   try {
-    const r = await designRoles(body.data.aim, body.data.avoid ?? []);
-    store.endStep(stepId, { status: 'completed', durationMs: Date.now() - t0, outputSummary: r.data.map((o) => o.title).join(' · '), tokensIn: r.tokensIn, tokensOut: r.tokensOut });
+    const r = await designRoles(body.data.aim, body.data.avoid ?? [], store.getProfile());
+    store.endStep(stepId, { status: 'completed', durationMs: Date.now() - t0, outputSummary: r.data.map((o) => `${o.title} (${o.requirements.length} skills)`).join(' · '), tokensIn: r.tokensIn, tokensOut: r.tokensOut });
     store.finishRun(runId, 'completed');
     res.json({ options: r.data });
   } catch (e) {
@@ -197,15 +198,38 @@ api.post('/roles/suggest', aiLimit, async (req, res) => {
 api.post('/roles', (req, res) => {
   const body = z.object({
     title: z.string().trim().min(1).max(60), summary: z.string().trim().max(200),
-    requirements: z.array(z.object({ skillId: z.string(), level: z.number(), weight: z.number() })).min(3).max(8),
+    requirements: z.array(z.object({ skillId: z.string().optional(), name: z.string().max(60).optional(), level: z.number(), weight: z.number() })).min(3).max(8),
   }).safeParse(req.body);
-  const designed = body.success ? sanitizeRole(body.data) : null;
-  if (!designed) return res.status(400).json({ error: 'A role needs a title and at least 3 catalog skills' });
   const profile = store.getProfile()!;
-  const role = { id: `custom-${(res.locals.user as User).id}-${Date.now().toString(36)}`, ...designed };
-  store.saveProfile({ ...profile, customRoles: [role, ...(profile.customRoles ?? [])].slice(0, 6) });
+  const designed = body.success ? sanitizeRole(body.data, profile) : null;
+  if (!designed) return res.status(400).json({ error: 'A role needs a title and at least 3 skills' });
+  const userId = (res.locals.user as User).id;
+  // New skill names become this learner's custom skills (with search-based resources).
+  const created = designed.requirements.filter((q) => !q.skillId && q.name).map((q) => customSkill(userId, q.name!));
+  const customSkills = [...(profile.customSkills ?? [])];
+  for (const sk of created) if (!customSkills.some((x) => x.id === sk.id)) customSkills.push(sk);
+  registerSkills(customSkills);
+  const role = {
+    id: `custom-${userId}-${Date.now().toString(36)}`, title: designed.title, summary: designed.summary,
+    requirements: designed.requirements.map((q) => ({ skillId: q.skillId ?? customSkill(userId, q.name!).id, level: q.level, weight: q.weight })),
+  };
+  store.saveProfile({ ...profile, customSkills: customSkills.slice(-40), customRoles: [role, ...(profile.customRoles ?? [])].slice(0, 6) });
   registerRoles([role]);
-  res.status(201).json({ role });
+  res.status(201).json({ role, skills: customSkills });
+});
+
+// A learner can add any skill by name; catalog matches are reused, anything else becomes a custom skill.
+api.post('/skills', (req, res) => {
+  const body = z.object({ name: z.string().trim().min(2).max(60) }).safeParse(req.body);
+  if (!body.success) return res.status(400).json({ error: 'Skill name must be 2–60 characters' });
+  const profile = store.getProfile()!;
+  const existing = resolveSkill(body.data.name, profile);
+  if (existing) return res.json({ skill: [...SKILLS, ...(profile.customSkills ?? [])].find((s) => s.id === existing) });
+  const skill = customSkill((res.locals.user as User).id, body.data.name);
+  const customSkills = [...(profile.customSkills ?? []), skill].slice(-40);
+  store.saveProfile({ ...profile, customSkills });
+  registerSkills([skill]);
+  res.status(201).json({ skill });
 });
 
 api.get('/assessments', (_req, res) => res.json(ASSESSMENTS.map(toPublic)));

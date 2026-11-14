@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { LEVEL_LABELS, skillName } from '../../../shared/catalog';
 import type { AssessmentAttempt, PublicAssessment } from '../../../shared/types';
 import { useApp } from '../App';
+import { allRoles } from '../roles';
 import { api } from '../api';
 import { Badge, Button, Card, Spinner, fmtDate } from '../components/ui';
 
@@ -13,7 +14,7 @@ export function Assessments() {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [result, setResult] = useState<AssessmentAttempt | null>(null);
   const [loading, setLoading] = useState(false);
-  const role = meta.roles.find((r) => r.id === state.profile.targetRoleId)!;
+  const role = allRoles(meta, state.profile).find((r) => r.id === state.profile.targetRoleId) ?? meta.roles[0];
 
   const start = async (id: string) => {
     setLoading(true); setResult(null); setAnswers({});

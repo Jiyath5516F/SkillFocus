@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { LEVEL_LABELS, SKILLS, skillName } from '../../../shared/catalog';
 import type { Profile } from '../../../shared/types';
 import { useApp } from '../App';
+import { AimDesigner } from '../components/AimDesigner';
+import { allRoles } from '../roles';
 import { api } from '../api';
 import { ConfirmDialog, SelectMenu, TextAreaField, TextField } from '../components/hui';
 import { Badge, Button, Card } from '../components/ui';
@@ -42,7 +44,7 @@ export function ProfileView() {
 
       <Card title="Career goal" subtitle="Switching keeps all certifications, projects, assessments and previous plans">
         <div className="grid gap-3 md:grid-cols-3">
-          {meta.roles.map((r) => {
+          {allRoles(meta, state.profile).map((r) => {
             const current = r.id === state.profile.targetRoleId;
             return (
               <div key={r.id} className={`rounded-lg p-4 ring-1 ${current ? 'bg-indigo-400/10 ring-2 ring-indigo-400' : 'ring-white/10'}`}>
@@ -54,6 +56,7 @@ export function ProfileView() {
             );
           })}
         </div>
+              <div className="mt-4"><AimDesigner onSelect={async (r) => { if (busy || dirty) { notify('Save or wait for the agents first.'); return; } await changeGoal(r.id); }} /></div>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">

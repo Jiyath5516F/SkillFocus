@@ -125,6 +125,26 @@ describe('cohort insights', () => {
   });
 });
 
+describe('custom career aims', () => {
+  it('saves a sanitised custom aim that only its owner can target', async () => {
+    const created = await call('/roles', 'POST', { title: 'Cloud Support Engineer', summary: 'Keeps cloud apps running.', requirements: [
+      { skillId: 'python', level: 2, weight: 3 }, { skillId: 'git', level: 2, weight: 2 }, { skillId: 'rest_api', level: 9, weight: 7 }, { skillId: 'kubernetes', level: 2, weight: 2 }] });
+    assert.equal(created.status, 201);
+    const role = created.json.role;
+    assert.match(role.id, /^custom-/);
+    assert.deepEqual(role.requirements.map((r: { skillId: string }) => r.skillId), ['python', 'git', 'rest_api'], 'unknown skills dropped');
+    assert.equal(role.requirements[2].level, 4, 'level clamped');
+    const other = await call('/auth/signup', 'POST', { name: 'Intruder', email: 'intruder@example.com', password: 'intruder-pass-1' }, null);
+    const otherCookie = sessionFrom(other.headers);
+    assert.equal((await call('/goal', 'POST', { roleId: role.id }, otherCookie)).status, 400, "cannot target another learner's aim");
+    const mine = (await call('/state')).json;
+    assert.ok(mine.profile.customRoles.some((r: { id: string }) => r.id === role.id));
+  });
+  it('rejects aims without enough catalog skills', async () => {
+    assert.equal((await call('/roles', 'POST', { title: 'X', summary: '', requirements: [{ skillId: 'nope', level: 1, weight: 1 }, { skillId: 'nah', level: 1, weight: 1 }, { skillId: 'no', level: 1, weight: 1 }] })).status, 400);
+  });
+});
+
 describe('graceful degradation without AI', () => {
   it('still produces a clearly labelled rule-based roadmap', async () => {
     const { json } = await call('/analyze', 'POST');

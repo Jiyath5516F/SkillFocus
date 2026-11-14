@@ -8,6 +8,7 @@ import { MiraAvatar } from './components/MiraAvatar';
 import { Badge, Button, Spinner } from './components/ui';
 import { Assessments } from './views/Assessments';
 import { Onboarding } from './views/Onboarding';
+import { allRoles } from './roles';
 import { Cohort } from './views/Cohort';
 import { Overview } from './views/Overview';
 import { ProfileView } from './views/Profile';
@@ -124,7 +125,7 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
   }
 
   const busy = activeRun?.status === 'running';
-  const role = meta.roles.find((r) => r.id === state.profile.targetRoleId)!;
+  const role = allRoles(meta, state.profile).find((r) => r.id === state.profile.targetRoleId) ?? meta.roles[0];
   const ctx: Ctx = { state, meta, refresh, track, busy, activeRun, go, notify, setState };
 
   return (

@@ -3,6 +3,7 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react';
 import { useState } from 'react';
 import { LEVEL_LABELS, RESOURCE_BY_ID, ROLE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
 import { useApp } from '../App';
+import { allRoles } from '../roles';
 import { FORECAST_TARGET, useForecast } from '../forecast';
 import { api } from '../api';
 import { Badge, Button, Card, ConfidenceBadge, Delta, Empty, LevelBar, ProofMeter, ReadinessRing, fmtDate } from '../components/ui';
@@ -11,7 +12,7 @@ export function Overview() {
   const { state, meta, track, busy, go, notify } = useApp();
   const forecast = useForecast(state, state.profile.weeklyHours);
   const [starting, setStarting] = useState(false);
-  const role = meta.roles.find((r) => r.id === state.profile.targetRoleId)!;
+  const role = allRoles(meta, state.profile).find((r) => r.id === state.profile.targetRoleId) ?? meta.roles[0];
   const topGaps = [...state.twin.requirements].filter((r) => r.status !== 'met').sort((a, b) => b.impact - a.impact).slice(0, 3);
   const roadmap = state.roadmap;
   const next = roadmap?.milestones.find((m) => state.progress[m.key]?.status !== 'done');

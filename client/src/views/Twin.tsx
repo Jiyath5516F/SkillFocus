@@ -6,6 +6,7 @@ import { CartesianGrid, Legend, Line, LineChart, PolarAngleAxis, PolarGrid, Pola
 import { LEVEL_LABELS, ROLE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
 import { computeTwin, estimateSkill } from '../../../shared/engine';
 import { useApp } from '../App';
+import { allRoles } from '../roles';
 import { api } from '../api';
 import { ForecastCard } from '../components/Forecast';
 import { CheckChip } from '../components/hui';
@@ -27,7 +28,7 @@ export function Twin() {
     return computeTwin(state.profile, state.evidence, twin.roleId, overrides);
   }, [whatIf, state, twin]);
 
-  const comparisons = meta.roles.map((r) => ({ role: r, twin: computeTwin(state.profile, state.evidence, r.id) }));
+  const comparisons = allRoles(meta, state.profile).map((r) => ({ role: r, twin: computeTwin(state.profile, state.evidence, r.id) }));
 
   const switchGoal = async (roleId: string) => {
     try { track((await api.changeGoal(roleId)).runId); } catch (e) { notify((e as Error).message); }

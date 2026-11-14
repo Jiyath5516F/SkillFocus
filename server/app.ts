@@ -3,9 +3,10 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
-import { ROLES, ROLE_BY_ID, RESOURCES, SKILLS, SKILL_BY_ID } from '../shared/catalog';
+import { ROLES, ROLE_BY_ID, RESOURCES, SKILLS, SKILL_BY_ID, registerRoles } from '../shared/catalog';
 import type { MilestoneStatus } from '../shared/types';
 import { mentorReply } from './agents/mentor';
+import { designRoles, sanitizeRole } from './agents/roleDesigner';
 import {
   authenticate, clearSessionCookie, createSession, createUser, deleteSession, findUserByEmail, readSessionCookie, setSessionCookie, tooManyAttempts, userForSession, type User,
 } from './auth';
@@ -105,7 +106,10 @@ api.use((req, res, next) => {
   const user = userForSession(readSessionCookie(req));
   if (!user) return res.status(401).json({ error: 'Please sign in' });
   res.locals.user = user;
-  store.runAsUser(user.id, () => next());
+  store.runAsUser(user.id, () => {
+    store.getProfile(); // registers this learner's custom aims before any route resolves a role id
+    next();
+  });
 });
 
 api.get('/meta', (_req, res) => res.json({ roles: ROLES, skills: SKILLS, resources: RESOURCES, assessments: ASSESSMENTS.map((a) => ({ id: a.id, skillId: a.skillId, title: a.title, questions: a.questions.length })) }));
@@ -124,6 +128,12 @@ const ProfileSchema = z.object({
   onboarded: z.boolean().optional(),
 });
 
+/** A role id is usable if it is built-in, or a custom aim owned by the signed-in learner. */
+function roleAllowed(roleId: string): boolean {
+  if (!ROLE_BY_ID[roleId]) return false;
+  return !roleId.startsWith('custom-') || (store.getProfile()?.customRoles ?? []).some((r) => r.id === roleId);
+}
+
 function sendErr(res: Response, e: unknown) {
   if (e instanceof BusyError) return res.status(409).json({ error: e.message });
   console.error(e);
@@ -134,14 +144,14 @@ api.put('/profile', aiLimit, (req, res) => {
   const parsed = ProfileSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Invalid profile', details: parsed.error.issues.slice(0, 5).map((i) => `${i.path.join('.')}: ${i.message}`) });
   const p = parsed.data;
-  if (!ROLE_BY_ID[p.targetRoleId]) return res.status(400).json({ error: 'Unknown career goal' });
+  if (!roleAllowed(p.targetRoleId)) return res.status(400).json({ error: 'Unknown career goal' });
   const unknown = p.skills.find((s) => !SKILL_BY_ID[s.skillId]);
   if (unknown) return res.status(400).json({ error: `Unknown skill: ${unknown.skillId}` });
   // De-duplicate skills (keep the last entry for each skill).
   const skills = [...new Map(p.skills.map((s) => [s.skillId, s])).values()].filter((s) => s.selfLevel > 0);
   try {
     if (store.activeRunId()) throw new BusyError(BUSY);
-    store.saveProfile({ ...p, skills });
+    store.saveProfile({ ...p, skills, customRoles: store.getProfile()?.customRoles }); // custom aims are managed by /roles
     // ?analyze=false saves without running the agents (e.g. "Skip for now" in the setup wizard).
     res.json({ runId: req.query.analyze === 'false' ? null : startAnalyze('profile_updated') });
   } catch (e) { sendErr(res, e); }
@@ -153,7 +163,7 @@ api.post('/analyze', aiLimit, (_req, res) => {
 
 api.post('/goal', aiLimit, (req, res) => {
   const roleId = z.object({ roleId: z.string() }).safeParse(req.body);
-  if (!roleId.success || !ROLE_BY_ID[roleId.data.roleId]) return res.status(400).json({ error: 'Unknown career goal' });
+  if (!roleId.success || !roleAllowed(roleId.data.roleId)) return res.status(400).json({ error: 'Unknown career goal' });
   const profile = store.getProfile()!;
   if (profile.targetRoleId === roleId.data.roleId) return res.status(400).json({ error: 'That is already your current goal' });
   try {
@@ -162,6 +172,40 @@ api.post('/goal', aiLimit, (req, res) => {
     store.saveProfile({ ...profile, targetRoleId: roleId.data.roleId });
     res.json({ runId: startGoalChange(from, roleId.data.roleId) });
   } catch (e) { sendErr(res, e); }
+});
+
+// ---- Custom career aims designed with Mira ----
+api.post('/roles/suggest', aiLimit, async (req, res) => {
+  const body = z.object({ aim: z.string().trim().min(3).max(160), avoid: z.array(z.string().max(80)).max(12).optional() }).safeParse(req.body);
+  if (!body.success) return res.status(400).json({ error: 'Describe your aim in 3–160 characters' });
+  const runId = store.createRun('role_design');
+  const t0 = Date.now();
+  const stepId = store.startStep(runId, 'Career Matching', 'llm', MODEL, `Design role profiles for aim: "${body.data.aim.slice(0, 120)}"`);
+  try {
+    const r = await designRoles(body.data.aim, body.data.avoid ?? []);
+    store.endStep(stepId, { status: 'completed', durationMs: Date.now() - t0, outputSummary: r.data.map((o) => o.title).join(' · '), tokensIn: r.tokensIn, tokensOut: r.tokensOut });
+    store.finishRun(runId, 'completed');
+    res.json({ options: r.data });
+  } catch (e) {
+    const msg = describeError(e);
+    store.endStep(stepId, { status: 'failed', durationMs: Date.now() - t0, error: msg });
+    store.finishRun(runId, 'failed');
+    res.status(502).json({ error: `Mira couldn't design roles right now: ${msg}` });
+  }
+});
+
+api.post('/roles', (req, res) => {
+  const body = z.object({
+    title: z.string().trim().min(1).max(60), summary: z.string().trim().max(200),
+    requirements: z.array(z.object({ skillId: z.string(), level: z.number(), weight: z.number() })).min(3).max(8),
+  }).safeParse(req.body);
+  const designed = body.success ? sanitizeRole(body.data) : null;
+  if (!designed) return res.status(400).json({ error: 'A role needs a title and at least 3 catalog skills' });
+  const profile = store.getProfile()!;
+  const role = { id: `custom-${(res.locals.user as User).id}-${Date.now().toString(36)}`, ...designed };
+  store.saveProfile({ ...profile, customRoles: [role, ...(profile.customRoles ?? [])].slice(0, 6) });
+  registerRoles([role]);
+  res.status(201).json({ role });
 });
 
 api.get('/assessments', (_req, res) => res.json(ASSESSMENTS.map(toPublic)));

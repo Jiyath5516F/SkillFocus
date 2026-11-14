@@ -1,9 +1,10 @@
 import { Radio, RadioGroup } from '@headlessui/react';
 import { CheckCircleIcon, PlusIcon, XMarkIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
-import { LEVEL_LABELS, SKILLS, skillName } from '../../../shared/catalog';
+import { LEVEL_LABELS, SKILLS, registerRoles, skillName } from '../../../shared/catalog';
 import type { Profile } from '../../../shared/types';
 import { api, type Meta } from '../api';
+import { AimDesigner } from '../components/AimDesigner';
 import { MiraAvatar } from '../components/MiraAvatar';
 import { SelectMenu, TextAreaField, TextField } from '../components/hui';
 import { Button, Spinner } from '../components/ui';
@@ -58,8 +59,8 @@ export function Onboarding({ meta, profile, onDone }: { meta: Meta; profile: Pro
                 <h2 className="text-base font-semibold text-white">Which role are you aiming for?</h2>
                 <p className="text-sm text-white/60">Mira compares your evidence with this role's requirements. You can switch any time without losing history.</p>
               </div>
-              <RadioGroup value={p.targetRoleId} onChange={(v) => set('targetRoleId', v)} aria-label="Target role" className="grid gap-3 sm:grid-cols-3">
-                {meta.roles.map((r) => (
+              <RadioGroup value={p.targetRoleId} onChange={(v) => { registerRoles(p.customRoles); set('targetRoleId', v); }} aria-label="Target role" className="grid gap-3 sm:grid-cols-3">
+                {[...meta.roles, ...(p.customRoles ?? [])].map((r) => (
                   <Radio key={r.id} value={r.id} className="group cursor-pointer rounded-xl bg-white/5 p-4 ring-1 ring-white/10 transition focus:outline-none data-checked:bg-indigo-500/15 data-checked:ring-2 data-checked:ring-indigo-400 data-focus:outline-2 data-focus:outline-white/40 data-hover:bg-white/10">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-semibold text-white">{r.title}</span>
@@ -69,6 +70,7 @@ export function Onboarding({ meta, profile, onDone }: { meta: Meta; profile: Pro
                   </Radio>
                 ))}
               </RadioGroup>
+              <AimDesigner onSelect={(r) => setP({ ...p, customRoles: [r, ...(p.customRoles ?? [])], targetRoleId: r.id })} />
               <SelectMenu label="How much time can you study each week?" value={p.weeklyHours} onChange={(v) => set('weeklyHours', v)} options={HOURS.some((h) => h.value === p.weeklyHours) ? HOURS : [...HOURS, { value: p.weeklyHours, label: `${p.weeklyHours} hours / week` }]} className="max-w-xs" />
             </div>
           )}

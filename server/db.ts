@@ -5,6 +5,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { registerRoles } from '../shared/catalog';
 import type {
   AgentRun, AgentStep, AssessmentAttempt, Evidence, MentorMessage, MilestoneProgress, MilestoneStatus, Profile, RoadmapRevision,
 } from '../shared/types';
@@ -75,7 +76,10 @@ type Row = Record<string, unknown>;
 // ---- learner ----
 export function getProfile(): Profile | null {
   const row = cur().prepare('SELECT profile FROM learner WHERE id = 1').get() as Row | undefined;
-  return row ? (JSON.parse(row.profile as string) as Profile) : null;
+  if (!row) return null;
+  const profile = JSON.parse(row.profile as string) as Profile;
+  registerRoles(profile.customRoles); // make this learner's custom aims resolvable by the engine
+  return profile;
 }
 export function saveProfile(p: Profile) {
   cur().prepare('INSERT INTO learner (id, profile, updated_at) VALUES (1, ?, ?) ON CONFLICT(id) DO UPDATE SET profile = excluded.profile, updated_at = excluded.updated_at').run(JSON.stringify(p), now());

@@ -78,6 +78,11 @@ export const ROLES: RoleDef[] = [
 
 export const ROLE_BY_ID = indexById(ROLES);
 
+/** Custom roles (designed with Mira) are stored per account and registered at runtime under unique ids. */
+export function registerRoles(roles: RoleDef[] | undefined) {
+  for (const r of roles ?? []) if (r.id.startsWith('custom-')) ROLE_BY_ID[r.id] = r;
+}
+
 // Curated, free, well-known learning resources. Only these IDs may be recommended by agents.
 export const RESOURCES: Resource[] = [
   { id: 'mdn-learn-web', skillId: 'html', title: 'Learn web development', provider: 'MDN', url: 'https://developer.mozilla.org/en-US/docs/Learn_web_development', kind: 'course', hours: 10 },

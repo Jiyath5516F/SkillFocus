@@ -57,9 +57,9 @@ export function Twin() {
                 <PolarGrid stroke="#e4dccb" />
                 <PolarAngleAxis dataKey="skill" tick={{ fontSize: 11, fill: '#475569' }} />
                 <PolarRadiusAxis domain={[0, 4]} tickCount={5} tick={false} axisLine={false} />
-                <Radar name="Required" dataKey="Required" stroke="#334155" fill="#334155" fillOpacity={0.06} strokeDasharray="4 3" />
+                <Radar name="Required" dataKey="Required" stroke="#8a7f6a" fill="#8a7f6a" fillOpacity={0.06} strokeDasharray="4 3" />
                 <Radar name="Self-reported" dataKey="Self-reported" stroke="#d98a1f" fill="#d98a1f" fillOpacity={0.12} />
-                <Radar name="Effective" dataKey="Effective" stroke="#1f2a48" fill="#1f2a48" fillOpacity={0.3} />
+                <Radar name="Effective" dataKey="Effective" stroke="#1f2a48" fill="#1f2a48" fillOpacity={0.45} strokeWidth={2} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Tooltip />
               </RadarChart>

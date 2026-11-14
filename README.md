@@ -33,6 +33,7 @@ Career Twin is a transparent, evidence-based model of the learner's readiness fo
 - **Evidence ledger.** Every skill estimate traces back to its source: a self-report, a completed milestone (a *claim*), a project or certification linked by the Skill Intelligence Agent, or an **assessment attempt**.
 - **Confidence levels.** Each estimate is labelled *Unverified* (×0.75), *Evidence-backed* (×0.9) or *Assessed* (the verified level, which overrides earlier claims).
 - **Explainable readiness.** `readiness = Σ weight × min(effective / required, 1) ÷ Σ weight`, with weights critical 3, important 2, nice-to-have 1. Each skill's **impact** is the number of readiness points it would add if mastered, which drives prioritisation. The figure is always labelled an *estimate, not a hiring probability*.
+- **Proof meter.** Splits the readiness estimate into *assessed*, *evidence-backed* and *unverified* points using the same formula, so a learner can see at a glance how much of their readiness is actually proven.
 - **Before/after comparison.** Each roadmap revision stores a snapshot, so the UI shows readiness and per-skill changes, plus the milestones that were added, removed or reordered.
 - **What-if simulator.** Previews readiness if you mastered selected skills. It uses the same engine on the client and **never writes to the database**.
 - **Goal comparison.** The same evidence is evaluated against all three roles. Switching goal keeps all history.

@@ -4,7 +4,7 @@ import { LEVEL_LABELS, ROLE_BY_ID, milestoneLabel, skillName } from '../../../sh
 import { computeTwin, estimateSkill } from '../../../shared/engine';
 import { useApp } from '../App';
 import { api } from '../api';
-import { Badge, Button, Card, ConfidenceBadge, Delta, LevelBar, ReadinessRing, fmtDate } from '../components/ui';
+import { Badge, Button, Card, ConfidenceBadge, Delta, LevelBar, ProofMeter, ReadinessRing, fmtDate } from '../components/ui';
 
 export function Twin() {
   const { state, meta, track, busy, notify } = useApp();
@@ -32,7 +32,7 @@ export function Twin() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Career Twin</h1>
+        <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Career Twin</h1>
         <p className="mt-1 max-w-3xl text-sm text-slate-500">
           A live, evidence-based model of your readiness for <span className="font-medium text-slate-700">{role.title}</span>. Self-reported skills are discounted until a project, certification or assessment backs them; assessments override everything they supersede.
         </p>
@@ -42,7 +42,8 @@ export function Twin() {
         <Card title="Readiness estimate" subtitle="Not a hiring probability">
           <div className="flex flex-col items-center gap-3">
             <ReadinessRing value={twin.readiness} size={148} />
-            <div className="w-full rounded-lg bg-stone-50 p-3 font-mono text-[11px] leading-relaxed text-slate-600">
+            <div className="w-full"><ProofMeter requirements={twin.requirements} /></div>
+            <div className="w-full rounded-lg bg-paper p-3 font-mono text-[11px] leading-relaxed text-slate-600">
               readiness = Σ weight × min(effective / required, 1) ÷ Σ weight<br />
               effective = assessed level, or claim × 0.75 (× 0.9 with evidence)<br />
               weights: critical 3 · important 2 · nice-to-have 1
@@ -53,12 +54,12 @@ export function Twin() {
           <div className="h-80">
             <ResponsiveContainer>
               <RadarChart data={radar} outerRadius="78%">
-                <PolarGrid stroke="#e7e5e4" />
+                <PolarGrid stroke="#e4dccb" />
                 <PolarAngleAxis dataKey="skill" tick={{ fontSize: 11, fill: '#475569' }} />
                 <PolarRadiusAxis domain={[0, 4]} tickCount={5} tick={false} axisLine={false} />
                 <Radar name="Required" dataKey="Required" stroke="#334155" fill="#334155" fillOpacity={0.06} strokeDasharray="4 3" />
-                <Radar name="Self-reported" dataKey="Self-reported" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.08} />
-                <Radar name="Effective" dataKey="Effective" stroke="#0f766e" fill="#0f766e" fillOpacity={0.3} />
+                <Radar name="Self-reported" dataKey="Self-reported" stroke="#d98a1f" fill="#d98a1f" fillOpacity={0.12} />
+                <Radar name="Effective" dataKey="Effective" stroke="#1f2a48" fill="#1f2a48" fillOpacity={0.3} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Tooltip />
               </RadarChart>
@@ -70,12 +71,12 @@ export function Twin() {
       {rev?.previous && rev.diff && (
         <Card title={`What changed in roadmap v${rev.version}`} subtitle={rev.trigger}>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg border border-stone-200 p-4">
+            <div className="rounded-lg border border-line p-4">
               <div className="text-xs uppercase tracking-wide text-slate-500">Readiness</div>
               <div className="mt-1 text-2xl font-semibold tabular-nums">{rev.previous.readiness}% → {rev.snapshot.readiness}%</div>
               <Delta from={rev.previous.readiness} to={rev.snapshot.readiness} suffix=" pts" />
             </div>
-            <div className="rounded-lg border border-stone-200 p-4 md:col-span-2">
+            <div className="rounded-lg border border-line p-4 md:col-span-2">
               <div className="mb-2 text-xs uppercase tracking-wide text-slate-500">Skill estimates (before → after)</div>
               <ul className="grid gap-1 text-sm sm:grid-cols-2">
                 {Object.entries(rev.snapshot.levels).map(([id, after]) => {
@@ -116,7 +117,7 @@ export function Twin() {
                   </div>
                 </button>
                 {open === r.skillId && (
-                  <ul className="mt-2 space-y-1 rounded-lg bg-stone-50 p-3 text-xs text-slate-600">
+                  <ul className="mt-2 space-y-1 rounded-lg bg-paper p-3 text-xs text-slate-600">
                     <li>Required: {LEVEL_LABELS[r.required]} ({r.required}) · weight {r.weight}</li>
                     {est.sources.length ? est.sources.map((s, i) => <li key={i}>• {s}</li>) : <li>• No evidence yet</li>}
                     {state.matching?.notes.find((n) => n.skillId === r.skillId) && <li className="text-slate-700">Career Matching Agent: {state.matching.notes.find((n) => n.skillId === r.skillId)!.note}</li>}
@@ -132,7 +133,7 @@ export function Twin() {
         <Card title="What-if simulator" subtitle="Preview the effect of mastering a skill. Simulation only — never saved.">
           <div className="flex flex-wrap gap-2">
             {twin.requirements.filter((r) => r.status !== 'met').map((r) => (
-              <label key={r.skillId} className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm ${whatIf.includes(r.skillId) ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-stone-200'}`}>
+              <label key={r.skillId} className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm ${whatIf.includes(r.skillId) ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-line'}`}>
                 <input type="checkbox" className="accent-brand-700" checked={whatIf.includes(r.skillId)} onChange={(e) => setWhatIf(e.target.checked ? [...whatIf, r.skillId] : whatIf.filter((x) => x !== r.skillId))} />
                 {skillName(r.skillId)}
               </label>
@@ -176,7 +177,7 @@ export function Twin() {
                   <XAxis dataKey="v" tick={{ fontSize: 11 }} />
                   <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
                   <Tooltip formatter={(v) => [`${v}%`, 'Readiness']} />
-                  <Line type="monotone" dataKey="readiness" stroke="#0f766e" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="readiness" stroke="#1f2a48" strokeWidth={2} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

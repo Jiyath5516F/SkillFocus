@@ -5,7 +5,7 @@ import { useApp } from '../App';
 import { api } from '../api';
 import { Badge, Button, Card } from '../components/ui';
 
-const input = 'w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm focus:border-brand-600 focus:outline-none';
+const input = 'w-full rounded-lg border border-line-strong bg-white px-3 py-2 text-sm focus:border-brand-600 focus:outline-none';
 
 export function ProfileView() {
   const { state, meta, track, busy, notify, setState } = useApp();
@@ -33,7 +33,7 @@ export function ProfileView() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Profile</h1>
+          <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Profile</h1>
           <p className="mt-1 text-sm text-slate-500">Saving re-runs the agent team. Self-reported levels are treated as claims until evidence or an assessment backs them.</p>
         </div>
         <Button onClick={save} disabled={!dirty || saving || busy}>{busy ? 'Agents working…' : dirty ? 'Save & re-analyze' : 'Saved'}</Button>
@@ -42,7 +42,7 @@ export function ProfileView() {
       <Card title="Career goal" subtitle="Switching keeps all certifications, projects, assessments and previous plans">
         <div className="grid gap-3 md:grid-cols-3">
           {meta.roles.map((r) => (
-            <div key={r.id} className={`rounded-lg border p-4 ${r.id === state.profile.targetRoleId ? 'border-brand-600 bg-brand-50/50' : 'border-stone-200'}`}>
+            <div key={r.id} className={`rounded-lg border p-4 ${r.id === state.profile.targetRoleId ? 'border-brand-600 bg-brand-50/50' : 'border-line'}`}>
               <div className="flex items-center justify-between gap-2"><span className="font-medium text-slate-900">{r.title}</span>{r.id === state.profile.targetRoleId && <Badge tone="brand">current</Badge>}</div>
               <p className="mt-1 text-xs text-slate-500">{r.summary}</p>
               <p className="mt-2 text-xs text-slate-500">Needs: {r.requirements.map((q) => skillName(q.skillId)).join(', ')}</p>
@@ -69,7 +69,7 @@ export function ProfileView() {
               <li key={s.skillId} className="flex items-center justify-between gap-2">
                 <span className="text-sm text-slate-800">{skillName(s.skillId)}</span>
                 <div className="flex items-center gap-2">
-                  <select aria-label={`${skillName(s.skillId)} level`} className="rounded-lg border border-stone-300 px-2 py-1 text-sm" value={s.selfLevel} onChange={(e) => setP({ ...p, skills: p.skills.map((x) => (x.skillId === s.skillId ? { ...x, selfLevel: Number(e.target.value) } : x)) })}>
+                  <select aria-label={`${skillName(s.skillId)} level`} className="rounded-lg border border-line-strong px-2 py-1 text-sm" value={s.selfLevel} onChange={(e) => setP({ ...p, skills: p.skills.map((x) => (x.skillId === s.skillId ? { ...x, selfLevel: Number(e.target.value) } : x)) })}>
                     {LEVEL_LABELS.slice(1).map((l, i) => <option key={l} value={i + 1}>{l}</option>)}
                   </select>
                   <button aria-label={`Remove ${skillName(s.skillId)}`} className="rounded px-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600" onClick={() => setP({ ...p, skills: p.skills.filter((x) => x.skillId !== s.skillId) })}>✕</button>
@@ -78,7 +78,7 @@ export function ProfileView() {
             ))}
           </ul>
           <div className="mt-3 flex gap-2">
-            <select aria-label="Add skill" className="flex-1 rounded-lg border border-stone-300 px-2 py-2 text-sm" value={newSkill} onChange={(e) => setNewSkill(e.target.value)}>
+            <select aria-label="Add skill" className="flex-1 rounded-lg border border-line-strong px-2 py-2 text-sm" value={newSkill} onChange={(e) => setNewSkill(e.target.value)}>
               <option value="">Add a skill…</option>
               {available.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>

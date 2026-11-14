@@ -33,7 +33,7 @@ export function Assessments() {
     const req = role.requirements.find((r) => r.skillId === quiz.skillId)?.level;
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{quiz.title} — result</h1>
+        <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">{quiz.title} — result</h1>
         <div className="grid gap-4 lg:grid-cols-3">
           <Card title="Score" subtitle="Graded deterministically against the answer key">
             <div className="text-4xl font-semibold tabular-nums text-slate-900">{latestFull.score}%</div>
@@ -48,7 +48,7 @@ export function Assessments() {
               {latestFull.conceptResults.map((c) => (
                 <li key={c.concept} className="text-sm">
                   <div className="mb-1 flex justify-between"><span className="text-slate-800">{c.label}</span><span className={c.correct / c.total < 0.5 ? 'font-medium text-rose-600' : 'text-emerald-700'}>{c.correct}/{c.total}</span></div>
-                  <div className="h-2 rounded-full bg-stone-100"><div className={`h-2 rounded-full ${c.correct / c.total < 0.5 ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${(c.correct / c.total) * 100}%` }} /></div>
+                  <div className="h-2 rounded-full bg-paper-deep"><div className={`h-2 rounded-full ${c.correct / c.total < 0.5 ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${(c.correct / c.total) * 100}%` }} /></div>
                 </li>
               ))}
             </ul>
@@ -88,7 +88,7 @@ export function Assessments() {
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{quiz.title}</h1>
+            <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">{quiz.title}</h1>
             <p className="mt-1 text-sm text-slate-500">{quiz.questions.length} questions · {skillName(quiz.skillId)} · answers are graded against a fixed key</p>
           </div>
           <Button variant="ghost" onClick={() => setQuiz(null)}>Cancel</Button>
@@ -96,13 +96,13 @@ export function Assessments() {
         <ol className="space-y-4">
           {quiz.questions.map((q, i) => (
             <li key={q.id}>
-              <fieldset className="rounded-xl border border-stone-200 bg-white p-5">
+              <fieldset className="rounded-xl border border-line bg-white p-5">
                 <legend className="sr-only">Question {i + 1}</legend>
                 <div className="flex items-center gap-2"><span className="text-sm font-semibold text-slate-900">{i + 1}. {q.prompt}</span><Badge>{quiz.concepts[q.concept]}</Badge></div>
                 {q.code && <pre className="code-block mt-3 overflow-x-auto rounded-lg bg-slate-900 p-3 text-[13px] leading-relaxed text-slate-100">{q.code}</pre>}
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {q.options.map((o, oi) => (
-                    <label key={oi} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${answers[q.id] === oi ? 'border-brand-600 bg-brand-50' : 'border-stone-200 hover:bg-stone-50'}`}>
+                    <label key={oi} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm ${answers[q.id] === oi ? 'border-brand-600 bg-brand-50' : 'border-line hover:bg-paper'}`}>
                       <input type="radio" name={q.id} className="accent-brand-700" checked={answers[q.id] === oi} onChange={() => setAnswers({ ...answers, [q.id]: oi })} />
                       <span className="code-block">{o}</span>
                     </label>
@@ -112,7 +112,7 @@ export function Assessments() {
             </li>
           ))}
         </ol>
-        <div className="sticky bottom-4 flex items-center justify-between rounded-xl border border-stone-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+        <div className="sticky bottom-4 flex items-center justify-between rounded-xl border border-line bg-white/95 p-4 shadow-lg backdrop-blur">
           <span className="text-sm text-slate-600">{answered}/{quiz.questions.length} answered</span>
           <Button onClick={submit} disabled={answered < quiz.questions.length || loading || busy}>{loading ? <><Spinner /> Grading…</> : busy ? 'Agents busy…' : 'Submit answers'}</Button>
         </div>
@@ -123,7 +123,7 @@ export function Assessments() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Assessments</h1>
+        <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Assessments</h1>
         <p className="mt-1 text-sm text-slate-500">Short, objective checks. A result replaces self-reported levels and claims made before it, and weak concepts trigger targeted remediation.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">

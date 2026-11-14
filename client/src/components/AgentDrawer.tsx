@@ -49,7 +49,7 @@ export function RunView({ run }: { run: AgentRun }) {
       </div>
       <ol className="space-y-2">
         {run.steps.map((s) => (
-          <li key={s.id} className="rounded-lg border border-stone-200 bg-white p-3">
+          <li key={s.id} className="rounded-lg border border-line bg-white p-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <span className={`h-2 w-2 shrink-0 rounded-full ${AGENT_COLORS[s.agent] ?? 'bg-slate-400'}`} />
@@ -91,17 +91,17 @@ export function AgentDrawer({ open, onClose, activeRun, refreshKey }: { open: bo
   return (
     <>
       <div className={`fixed inset-0 z-30 bg-slate-900/20 transition-opacity ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`} onClick={onClose} />
-      <aside className={`fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l border-stone-200 bg-stone-50 shadow-xl transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`} aria-label="Agent activity" aria-hidden={!open} inert={!open}>
-        <div className="flex items-center justify-between border-b border-stone-200 bg-white px-5 py-4">
+      <aside className={`fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l border-line bg-paper shadow-xl transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`} aria-label="Agent activity" aria-hidden={!open} inert={!open}>
+        <div className="flex items-center justify-between border-b border-line bg-white px-5 py-4">
           <div>
             <h2 className="font-semibold text-slate-900">Agent activity</h2>
             <p className="text-xs text-slate-500">Real executions, recorded by the orchestrator</p>
           </div>
-          <button onClick={onClose} className="rounded-md px-2 py-1 text-slate-500 hover:bg-stone-100" aria-label="Close agent activity">✕</button>
+          <button onClick={onClose} className="rounded-md px-2 py-1 text-slate-500 hover:bg-paper-deep" aria-label="Close agent activity">✕</button>
         </div>
-        <div className="flex gap-1.5 overflow-x-auto border-b border-stone-200 bg-white px-5 py-2">
+        <div className="flex gap-1.5 overflow-x-auto border-b border-line bg-white px-5 py-2">
           {(activeRun && !runs.some((r) => r.id === activeRun.id) ? [activeRun, ...runs] : runs).slice(0, 10).map((r) => (
-            <button key={r.id} onClick={() => setSelected(r.id)} className={`shrink-0 rounded-md px-2 py-1 text-[11px] ${shown?.id === r.id ? 'bg-brand-700 text-white' : 'bg-stone-100 text-slate-600 hover:bg-stone-200'}`}>
+            <button key={r.id} onClick={() => setSelected(r.id)} className={`shrink-0 rounded-md px-2 py-1 text-[11px] ${shown?.id === r.id ? 'bg-brand-700 text-white' : 'bg-paper-deep text-slate-600 hover:bg-line'}`}>
               #{r.id} {TRIGGER_LABEL[r.trigger] ?? r.trigger}
             </button>
           ))}

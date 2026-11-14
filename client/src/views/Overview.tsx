@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { LEVEL_LABELS, RESOURCE_BY_ID, skillName } from '../../../shared/catalog';
 import { useApp } from '../App';
 import { api } from '../api';
-import { Badge, Button, Card, ConfidenceBadge, Delta, Empty, LevelBar, ReadinessRing, fmtDate } from '../components/ui';
+import { Badge, Button, Card, ConfidenceBadge, Delta, Empty, LevelBar, ProofMeter, ReadinessRing, fmtDate } from '../components/ui';
 
 export function Overview() {
   const { state, meta, track, busy, go, notify } = useApp();
@@ -21,7 +21,7 @@ export function Overview() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Hi {state.profile.name.split(' ')[0]} — here's where you stand</h1>
+        <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Hi {state.profile.name.split(' ')[0]} — here's where you stand</h1>
         <p className="mt-1 text-sm text-slate-500">Target: {role.title}. Every number below is computed from evidence you can inspect in Career Twin.</p>
       </div>
 
@@ -37,6 +37,7 @@ export function Overview() {
               <p className="text-xs text-slate-500">Estimate of skill coverage — not a hiring probability.</p>
             </div>
           </div>
+          <div className="mt-5 border-t border-line pt-4"><ProofMeter requirements={state.twin.requirements} /></div>
         </Card>
 
         <Card className="lg:col-span-2" title="Biggest skill gaps" subtitle="Ranked by readiness points you'd gain by mastering each skill" action={<Button variant="ghost" onClick={() => go('twin')}>Open Career Twin →</Button>}>
@@ -75,7 +76,7 @@ export function Overview() {
               <p className="mt-2 text-sm text-slate-600">{next.reason}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {next.resourceIds.map((id) => RESOURCE_BY_ID[id]).filter(Boolean).map((r) => (
-                  <a key={r.id} href={r.url} target="_blank" rel="noreferrer" className="rounded-md border border-stone-200 px-2.5 py-1 text-xs text-brand-800 hover:bg-brand-50">{r.title} · {r.provider} ↗</a>
+                  <a key={r.id} href={r.url} target="_blank" rel="noreferrer" className="rounded-md border border-line px-2.5 py-1 text-xs text-brand-800 hover:bg-brand-50">{r.title} · {r.provider} ↗</a>
                 ))}
               </div>
               <div className="mt-4 flex gap-2">
@@ -88,10 +89,10 @@ export function Overview() {
 
         <Card title="Progress">
           <dl className="grid grid-cols-2 gap-3 text-sm">
-            <div className="rounded-lg bg-stone-50 p-3"><dt className="text-xs text-slate-500">Milestones done</dt><dd className="text-lg font-semibold">{done}/{roadmap?.milestones.length ?? 0}</dd></div>
-            <div className="rounded-lg bg-stone-50 p-3"><dt className="text-xs text-slate-500">Assessments</dt><dd className="text-lg font-semibold">{state.attempts.length}</dd></div>
-            <div className="rounded-lg bg-stone-50 p-3"><dt className="text-xs text-slate-500">Roadmap version</dt><dd className="text-lg font-semibold">{roadmap ? `v${roadmap.version}` : '—'}</dd></div>
-            <div className="rounded-lg bg-stone-50 p-3"><dt className="text-xs text-slate-500">Plans (all goals)</dt><dd className="text-lg font-semibold">{state.revisions.length}</dd></div>
+            <div className="rounded-lg bg-paper p-3"><dt className="text-xs text-slate-500">Milestones done</dt><dd className="text-lg font-semibold">{done}/{roadmap?.milestones.length ?? 0}</dd></div>
+            <div className="rounded-lg bg-paper p-3"><dt className="text-xs text-slate-500">Assessments</dt><dd className="text-lg font-semibold">{state.attempts.length}</dd></div>
+            <div className="rounded-lg bg-paper p-3"><dt className="text-xs text-slate-500">Roadmap version</dt><dd className="text-lg font-semibold">{roadmap ? `v${roadmap.version}` : '—'}</dd></div>
+            <div className="rounded-lg bg-paper p-3"><dt className="text-xs text-slate-500">Plans (all goals)</dt><dd className="text-lg font-semibold">{state.revisions.length}</dd></div>
           </dl>
           {state.attempts[0] && (
             <p className="mt-3 text-xs text-slate-500">Last assessment: {skillName(state.attempts[0].skillId)} — {state.attempts[0].score}% ({fmtDate(state.attempts[0].createdAt)})</p>

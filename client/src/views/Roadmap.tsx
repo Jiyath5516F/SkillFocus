@@ -35,12 +35,12 @@ export function Roadmap() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Learning roadmap <span className="text-slate-500">v{rev.version}</span></h1>
+          <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Learning roadmap <span className="text-slate-500">v{rev.version}</span></h1>
           <p className="mt-1 text-sm text-slate-500">{rev.trigger} · {fmtDate(rev.createdAt)}</p>
         </div>
         <div className="flex items-center gap-2">
           {forRole.length > 1 && (
-            <select aria-label="Roadmap version" className="rounded-lg border border-stone-300 bg-white px-2 py-2 text-sm" value={rev.id} onChange={(e) => setViewId(Number(e.target.value))}>
+            <select aria-label="Roadmap version" className="rounded-lg border border-line-strong bg-white px-2 py-2 text-sm" value={rev.id} onChange={(e) => setViewId(Number(e.target.value))}>
               {forRole.map((r) => <option key={r.id} value={r.id}>v{r.version}{r.id === state.roadmap?.id ? ' (current)' : ''}</option>)}
             </select>
           )}
@@ -52,7 +52,7 @@ export function Roadmap() {
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
           <div><span className="font-semibold text-slate-900">{done}/{rev.milestones.length}</span> <span className="text-slate-500">milestones done</span></div>
           <div><span className="font-semibold text-slate-900">~{hours}h</span> <span className="text-slate-500">remaining · ~{Math.ceil(hours / Math.max(1, state.profile.weeklyHours))} weeks at {state.profile.weeklyHours}h/week</span></div>
-          <div className="h-2 min-w-40 flex-1 rounded-full bg-stone-100"><div className="h-2 rounded-full bg-brand-600" style={{ width: `${(done / Math.max(1, rev.milestones.length)) * 100}%` }} /></div>
+          <div className="h-2 min-w-40 flex-1 rounded-full bg-paper-deep"><div className="h-2 rounded-full bg-brand-600" style={{ width: `${(done / Math.max(1, rev.milestones.length)) * 100}%` }} /></div>
         </div>
         <p className="mt-3 text-sm text-slate-600">{rev.changeSummary}</p>
         {rev.diff && (rev.diff.added.length > 0 || rev.diff.removed.length > 0 || rev.diff.moved.length > 0) && (
@@ -73,10 +73,10 @@ export function Roadmap() {
           const status = state.progress[m.key]?.status ?? 'todo';
           const isNew = rev.diff?.added.includes(m.key);
           return (
-            <li key={m.key} className={`rounded-xl border bg-white p-5 ${m.kind === 'remediation' ? 'border-rose-200' : 'border-stone-200'} ${status === 'done' ? 'opacity-80' : ''}`}>
+            <li key={m.key} className={`rounded-xl border bg-white p-5 ${m.kind === 'remediation' ? 'border-rose-200' : 'border-line'} ${status === 'done' ? 'opacity-80' : ''}`}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex min-w-0 gap-3">
-                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${status === 'done' ? 'bg-emerald-600 text-white' : 'bg-stone-100 text-slate-600'}`}>{status === 'done' ? '✓' : i + 1}</div>
+                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${status === 'done' ? 'bg-emerald-600 text-white' : 'bg-paper-deep text-slate-600'}`}>{status === 'done' ? '✓' : i + 1}</div>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <h3 className="font-semibold text-slate-900">{m.title}</h3>
@@ -88,10 +88,10 @@ export function Roadmap() {
                   </div>
                 </div>
                 {isCurrent && (
-                  <div className="flex shrink-0 rounded-lg border border-stone-200 p-0.5" role="group" aria-label={`Status for ${m.title}`}>
+                  <div className="flex shrink-0 rounded-lg border border-line p-0.5" role="group" aria-label={`Status for ${m.title}`}>
                     {STATUS.map((s) => (
                       <button key={s.id} disabled={saving === m.key} onClick={() => setStatus(m.key, s.id)} aria-pressed={status === s.id}
-                        className={`rounded-md px-2.5 py-1 text-xs font-medium ${status === s.id ? (s.id === 'done' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-white') : 'text-slate-600 hover:bg-stone-100'}`}>
+                        className={`rounded-md px-2.5 py-1 text-xs font-medium ${status === s.id ? (s.id === 'done' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-white') : 'text-slate-600 hover:bg-paper-deep'}`}>
                         {s.label}
                       </button>
                     ))}

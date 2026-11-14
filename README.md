@@ -172,6 +172,8 @@ The acceptance tests cover the three required scenarios:
 ## Accessibility
 
 - **Headless UI** provides the accessible behaviour for interactive primitives: the Agent activity panel is a modal `Dialog` (focus trap, Escape, `aria-modal`, scroll lock) and quiz answers use `RadioGroup` (roving focus, arrow keys). They are styled like the dark headlessui.com examples (black canvas with a purple/blue glow, translucent `white/5` surfaces, `white/10` rings, Inter): `Dialog`, `RadioGroup`, `Listbox`, `Disclosure`, `Checkbox`, `Field`/`Input`/`Textarea`.
+- **Ask Mira from anywhere:** a floating launcher (Headless UI `Popover`) opens the grounded mentor chat on every page. Replies render as GitHub-flavoured Markdown (`react-markdown` + Tailwind Typography), and raw HTML in model output is never rendered.
+- Heroicons (by Tailwind Labs) label navigation and key actions; decorative icons are `aria-hidden`.
 - Semantic landmarks, a skip-to-content link, and visible focus rings.
 - Labelled form controls; radio-group quizzes; `aria-pressed` on milestone status buttons; a live region in the chat.
 - Respects `prefers-reduced-motion`.

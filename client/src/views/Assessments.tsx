@@ -1,3 +1,4 @@
+import { ArrowPathIcon, PlayIcon } from '@heroicons/react/20/solid';
 import { Radio, RadioGroup } from '@headlessui/react';
 import { useState } from 'react';
 import { LEVEL_LABELS, skillName } from '../../../shared/catalog';
@@ -138,7 +139,7 @@ export function Assessments() {
           return (
             <Card key={a.id} title={a.title} subtitle={`${a.questions} questions · ${skillName(a.skillId)}`} action={inRole ? <Badge tone="brand">In your goal</Badge> : undefined}>
               <p className="text-sm text-white/70">{last ? <>Last attempt: <span className="font-medium">{last.score}%</span> → verified {LEVEL_LABELS[last.verifiedLevel]} ({fmtDate(last.createdAt)})</> : 'Not attempted yet.'}</p>
-              <Button className="mt-4" onClick={() => start(a.id)} disabled={loading}>{last ? 'Retake' : 'Start'}</Button>
+              <Button className="mt-4" onClick={() => start(a.id)} disabled={loading}>{last ? <><ArrowPathIcon aria-hidden className="size-4" /> Retake</> : <><PlayIcon aria-hidden className="size-4" /> Start</>}</Button>
             </Card>
           );
         })}

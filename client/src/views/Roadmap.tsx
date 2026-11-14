@@ -1,3 +1,4 @@
+import { ArrowPathIcon, ArrowTopRightOnSquareIcon, SparklesIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
 import { LEVEL_LABELS, RESOURCE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
 import type { MilestoneStatus } from '../../../shared/types';
@@ -27,7 +28,7 @@ export function Roadmap() {
   };
 
   if (!rev) {
-    return <Empty title="No roadmap yet" action={<Button onClick={regenerate} disabled={busy}>{busy ? 'Agents working…' : 'Analyze my skills'}</Button>}>Run a skill analysis to generate your personalised roadmap.</Empty>;
+    return <Empty title="No roadmap yet" action={<Button onClick={regenerate} disabled={busy}>{busy ? 'Agents working…' : <><SparklesIcon aria-hidden className="size-4" /> Analyze my skills</>}</Button>}>Run a skill analysis to generate your personalised roadmap.</Empty>;
   }
   const done = rev.milestones.filter((m) => state.progress[m.key]?.status === 'done').length;
   const hours = rev.milestones.filter((m) => state.progress[m.key]?.status !== 'done').reduce((h, m) => h + m.effortHours, 0);
@@ -44,7 +45,7 @@ export function Roadmap() {
             <SelectMenu label="Roadmap version" srOnlyLabel className="w-40" value={rev.id} onChange={(id: number) => setViewId(id)}
               options={forRole.map((r) => ({ value: r.id, label: `v${r.version}${r.id === state.roadmap?.id ? ' (current)' : ''}` }))} />
           )}
-          <Button variant="secondary" onClick={regenerate} disabled={busy}>{busy ? 'Agents working…' : 'Re-analyze'}</Button>
+          <Button variant="secondary" onClick={regenerate} disabled={busy}>{busy ? 'Agents working…' : <><ArrowPathIcon aria-hidden className="size-4" /> Re-analyze</>}</Button>
         </div>
       </div>
 
@@ -97,7 +98,7 @@ export function Roadmap() {
                   <ul className="space-y-1.5">
                     {m.resourceIds.map((id) => RESOURCE_BY_ID[id]).filter(Boolean).map((r) => (
                       <li key={r.id} className="text-sm">
-                        <a href={r.url} target="_blank" rel="noreferrer" className="font-medium text-indigo-300 hover:underline">{r.title} ↗</a>
+                        <a href={r.url} target="_blank" rel="noreferrer" className="font-medium text-indigo-300 hover:underline">{r.title} <ArrowTopRightOnSquareIcon aria-hidden className="inline size-3.5" /></a>
                         <span className="text-white/60"> · {r.provider} · {r.kind} · ~{r.hours}h</span>
                       </li>
                     ))}

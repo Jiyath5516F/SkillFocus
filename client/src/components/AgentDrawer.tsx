@@ -1,3 +1,4 @@
+import { XMarkIcon } from '@heroicons/react/20/solid';
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useEffect, useState } from 'react';
 import type { AgentRun, AgentStep } from '../../../shared/types';
@@ -100,7 +101,7 @@ export function AgentDrawer({ open, onClose, activeRun, refreshKey }: { open: bo
             <DialogTitle className="text-base font-semibold text-white">Agent activity</DialogTitle>
             <p className="text-xs text-white/60">Real executions, recorded by the orchestrator</p>
           </div>
-          <button onClick={onClose} className="rounded-md px-2 py-1 text-white/60 hover:bg-white/10" aria-label="Close agent activity">✕</button>
+          <button onClick={onClose} className="rounded-md px-2 py-1 text-white/60 hover:bg-white/10" aria-label="Close agent activity"><XMarkIcon aria-hidden className="size-5" /></button>
         </div>
         <div className="flex gap-1.5 overflow-x-auto border-b border-white/10 px-5 py-2">
           {(activeRun && !runs.some((r) => r.id === activeRun.id) ? [activeRun, ...runs] : runs).slice(0, 10).map((r) => (

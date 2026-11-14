@@ -1,3 +1,4 @@
+import { ArrowUturnLeftIcon, CheckIcon, SparklesIcon, XMarkIcon } from '@heroicons/react/20/solid';
 import { useEffect, useState } from 'react';
 import { LEVEL_LABELS, SKILLS, skillName } from '../../../shared/catalog';
 import type { Profile } from '../../../shared/types';
@@ -36,7 +37,7 @@ export function ProfileView() {
           <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Profile</h1>
           <p className="mt-1 text-sm text-white/60">Saving re-runs the agent team. Self-reported levels are treated as claims until evidence or an assessment backs them.</p>
         </div>
-        <Button onClick={save} disabled={!dirty || saving || busy}>{busy ? 'Agents working…' : dirty ? 'Save & re-analyze' : 'Saved'}</Button>
+        <Button onClick={save} disabled={!dirty || saving || busy}>{busy ? 'Agents working…' : dirty ? <><SparklesIcon aria-hidden className="size-4" /> Save & re-analyze</> : <><CheckIcon aria-hidden className="size-4" /> Saved</>}</Button>
       </div>
 
       <Card title="Career goal" subtitle="Switching keeps all certifications, projects, assessments and previous plans">
@@ -75,7 +76,7 @@ export function ProfileView() {
                 <div className="flex items-center gap-2">
                   <SelectMenu label={`${skillName(s.skillId)} level`} srOnlyLabel className="w-36" value={s.selfLevel} options={LEVEL_OPTIONS}
                     onChange={(v) => set('skills', p.skills.map((x) => (x.skillId === s.skillId ? { ...x, selfLevel: v } : x)))} />
-                  <button aria-label={`Remove ${skillName(s.skillId)}`} className="rounded px-1.5 text-white/50 hover:bg-rose-400/10 hover:text-rose-300" onClick={() => set('skills', p.skills.filter((x) => x.skillId !== s.skillId))}>✕</button>
+                  <button aria-label={`Remove ${skillName(s.skillId)}`} className="rounded px-1.5 text-white/50 hover:bg-rose-400/10 hover:text-rose-300" onClick={() => set('skills', p.skills.filter((x) => x.skillId !== s.skillId))}><XMarkIcon aria-hidden className="size-4" /></button>
                 </div>
               </li>
             ))}
@@ -92,7 +93,7 @@ export function ProfileView() {
               <li key={i} className="grid grid-cols-12 items-end gap-2">
                 <div className="col-span-6"><TextField label="Certification" value={c.name} onChange={(v) => set('certifications', p.certifications.map((x, j) => (j === i ? { ...x, name: v } : x)))} /></div>
                 <div className="col-span-5"><TextField label="Issuer" value={c.issuer} onChange={(v) => set('certifications', p.certifications.map((x, j) => (j === i ? { ...x, issuer: v } : x)))} /></div>
-                <button aria-label={`Remove certification ${c.name}`} className="col-span-1 rounded py-1.5 text-white/50 hover:bg-rose-400/10 hover:text-rose-300" onClick={() => set('certifications', p.certifications.filter((_, j) => j !== i))}>✕</button>
+                <button aria-label={`Remove certification ${c.name}`} className="col-span-1 rounded py-1.5 text-white/50 hover:bg-rose-400/10 hover:text-rose-300" onClick={() => set('certifications', p.certifications.filter((_, j) => j !== i))}><XMarkIcon aria-hidden className="mx-auto size-4" /></button>
               </li>
             ))}
           </ul>
@@ -105,7 +106,7 @@ export function ProfileView() {
               <li key={i} className="space-y-2">
                 <div className="flex items-end gap-2">
                   <div className="flex-1"><TextField label="Project name" value={pr.name} onChange={(v) => set('projects', p.projects.map((x, j) => (j === i ? { ...x, name: v } : x)))} /></div>
-                  <button aria-label={`Remove project ${pr.name}`} className="rounded px-2 py-1.5 text-white/50 hover:bg-rose-400/10 hover:text-rose-300" onClick={() => set('projects', p.projects.filter((_, j) => j !== i))}>✕</button>
+                  <button aria-label={`Remove project ${pr.name}`} className="rounded px-2 py-1.5 text-white/50 hover:bg-rose-400/10 hover:text-rose-300" onClick={() => set('projects', p.projects.filter((_, j) => j !== i))}><XMarkIcon aria-hidden className="size-4" /></button>
                 </div>
                 <TextAreaField label={`Description of ${pr.name}`} srOnlyLabel value={pr.description} onChange={(v) => set('projects', p.projects.map((x, j) => (j === i ? { ...x, description: v } : x)))} />
               </li>
@@ -118,7 +119,7 @@ export function ProfileView() {
       <Card title="Demo controls">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-white/60">Restore the preloaded learner (Python, SQL, basic HTML → Full Stack Developer) for a clean demo.</p>
-          <Button variant="danger" onClick={() => setConfirmReset(true)} disabled={busy}>Reset demo learner</Button>
+          <Button variant="danger" onClick={() => setConfirmReset(true)} disabled={busy}><ArrowUturnLeftIcon aria-hidden className="size-4" /> Reset demo learner</Button>
         </div>
       </Card>
 

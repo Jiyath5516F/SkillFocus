@@ -1,27 +1,30 @@
-import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { ChatBubbleLeftRightIcon, ClipboardDocumentCheckIcon, CpuChipIcon, FingerPrintIcon, HomeIcon, MapIcon, UserCircleIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
 import type { AgentRun, AppState } from '../../shared/types';
 import { api, type Meta } from './api';
 import { AgentDrawer } from './components/AgentDrawer';
+import { FloatingMira } from './components/FloatingMira';
+import { MiraAvatar } from './components/MiraAvatar';
 import { Badge, Button, Spinner } from './components/ui';
 import { Assessments } from './views/Assessments';
 import { Cohort } from './views/Cohort';
-import { Mentor } from './views/Mentor';
 import { Overview } from './views/Overview';
 import { ProfileView } from './views/Profile';
 import { Roadmap } from './views/Roadmap';
 
 // Career Twin pulls in the charting library, so it is loaded on demand to keep the first load small.
 const Twin = lazy(() => import('./views/Twin').then((m) => ({ default: m.Twin })));
+const Mentor = lazy(() => import('./views/Mentor').then((m) => ({ default: m.Mentor })));
 
 export type View = 'overview' | 'twin' | 'roadmap' | 'assessments' | 'mentor' | 'profile' | 'cohort';
-const VIEWS: { id: View; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'twin', label: 'Career Twin' },
-  { id: 'roadmap', label: 'Roadmap' },
-  { id: 'assessments', label: 'Assessments' },
-  { id: 'mentor', label: 'Ask Mira' },
-  { id: 'profile', label: 'Profile' },
-  { id: 'cohort', label: 'Cohort insights' },
+const VIEWS: { id: View; label: string; icon: ComponentType<SVGProps<SVGSVGElement>> }[] = [
+  { id: 'overview', label: 'Overview', icon: HomeIcon },
+  { id: 'twin', label: 'Career Twin', icon: FingerPrintIcon },
+  { id: 'roadmap', label: 'Roadmap', icon: MapIcon },
+  { id: 'assessments', label: 'Assessments', icon: ClipboardDocumentCheckIcon },
+  { id: 'mentor', label: 'Ask Mira', icon: ChatBubbleLeftRightIcon },
+  { id: 'profile', label: 'Profile', icon: UserCircleIcon },
+  { id: 'cohort', label: 'Cohort insights', icon: UserGroupIcon },
 ];
 
 interface Ctx {
@@ -126,7 +129,7 @@ export default function App() {
         <aside className="border-b border-white/10 bg-black/40 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:w-64 lg:border-r lg:border-b-0">
           <div className="flex items-center justify-between px-5 py-4 lg:block">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500 text-base font-bold text-white" aria-hidden>M</div>
+              <MiraAvatar size="md" />
               <div>
                 <div className="text-lg font-semibold leading-tight text-white">Mira</div>
                 <div className="text-xs leading-tight text-white/60">Career learning, proven</div>
@@ -136,7 +139,8 @@ export default function App() {
           <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:pb-0" aria-label="Main">
             {VIEWS.map((v) => (
               <button key={v.id} onClick={() => go(v.id)} aria-current={view === v.id ? 'page' : undefined}
-                className={`shrink-0 rounded-md px-3 py-2 text-left text-sm font-semibold transition-colors ${view === v.id ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}>
+                className={`flex shrink-0 items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-semibold transition-colors ${view === v.id ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}>
+                <v.icon aria-hidden className="size-5 shrink-0" />
                 {v.label}
               </button>
             ))}
@@ -162,7 +166,7 @@ export default function App() {
             </div>
             <div className="flex items-center gap-2">
               <Button variant="secondary" onClick={() => setDrawer(true)}>
-                {busy ? <><span className="pulse-dot h-2 w-2 rounded-full bg-indigo-400" /> Agents working…</> : 'Agent activity'}
+                {busy ? <><span className="pulse-dot h-2 w-2 rounded-full bg-indigo-400" /> Agents working…</> : <><CpuChipIcon aria-hidden className="size-4" /> Agent activity</>}
               </Button>
             </div>
           </header>
@@ -178,12 +182,14 @@ export default function App() {
             {view === 'twin' && <Suspense fallback={<div className="flex items-center gap-2 text-white/60"><Spinner /> Loading Career Twin…</div>}><Twin /></Suspense>}
             {view === 'roadmap' && <Roadmap />}
             {view === 'assessments' && <Assessments />}
-            {view === 'mentor' && <Mentor />}
+            {view === 'mentor' && <Suspense fallback={<div className="flex items-center gap-2 text-white/60"><Spinner /> Loading Mira…</div>}><Mentor /></Suspense>}
             {view === 'profile' && <ProfileView />}
             {view === 'cohort' && <Cohort />}
           </main>
         </div>
       </div>
+
+      {view !== 'mentor' && <FloatingMira onOpenFull={() => go('mentor')} />}
 
       <AgentDrawer open={drawer} onClose={() => setDrawer(false)} activeRun={activeRun} refreshKey={refreshKey} />
 

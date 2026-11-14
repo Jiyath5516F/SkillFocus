@@ -1,3 +1,4 @@
+import { ChevronRightIcon } from '@heroicons/react/20/solid';
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react';
 import { useMemo, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -113,7 +114,7 @@ export function Twin() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="font-semibold text-white">{skillName(r.skillId)}</span>
                       {r.weight === 3 && <Badge tone="slate">critical</Badge>}
-                      <span className="text-white/50 transition-transform group-data-open:rotate-90" aria-hidden>›</span>
+                      <ChevronRightIcon aria-hidden className="size-4 text-white/50 transition-transform group-data-open:rotate-90" />
                     </div>
                     <div className="mt-1 flex gap-1.5"><ConfidenceBadge c={r.confidence} />{r.status === 'met' && <Badge tone="emerald">met</Badge>}</div>
                   </div>

@@ -1,3 +1,4 @@
+import { ArrowTopRightOnSquareIcon, ClipboardDocumentCheckIcon, MapIcon, SparklesIcon } from '@heroicons/react/20/solid';
 import { useState } from 'react';
 import { LEVEL_LABELS, RESOURCE_BY_ID, ROLE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
 import { useApp } from '../App';
@@ -67,7 +68,7 @@ export function Overview() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2" title="Recommended next step">
           {!roadmap ? (
-            <Empty title="No roadmap yet" action={<Button onClick={analyze} disabled={busy || starting}>{busy ? 'Agents working…' : 'Analyze my skills'}</Button>}>
+            <Empty title="No roadmap yet" action={<Button onClick={analyze} disabled={busy || starting}>{busy ? 'Agents working…' : <><SparklesIcon aria-hidden className="size-4" /> Analyze my skills</>}</Button>}>
               Mira's agent team will analyze your profile, match it to {role.title} and build a personalised roadmap.
             </Empty>
           ) : next ? (
@@ -79,12 +80,12 @@ export function Overview() {
               <p className="mt-2 text-sm text-white/70">{next.reason}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {next.resourceIds.map((id) => RESOURCE_BY_ID[id]).filter(Boolean).map((r) => (
-                  <a key={r.id} href={r.url} target="_blank" rel="noreferrer" className="rounded-md border border-white/10 px-2.5 py-1 text-xs text-indigo-300 hover:bg-white/10">{r.title} · {r.provider} ↗</a>
+                  <a key={r.id} href={r.url} target="_blank" rel="noreferrer" className="rounded-md border border-white/10 px-2.5 py-1 text-xs text-indigo-300 hover:bg-white/10">{r.title} · {r.provider} <ArrowTopRightOnSquareIcon aria-hidden className="inline size-3.5" /></a>
                 ))}
               </div>
               <div className="mt-4 flex gap-2">
-                <Button onClick={() => go('roadmap')}>Open roadmap</Button>
-                <Button variant="secondary" onClick={() => go('assessments')}>Take an assessment</Button>
+                <Button onClick={() => go('roadmap')}><MapIcon aria-hidden className="size-4" /> Open roadmap</Button>
+                <Button variant="secondary" onClick={() => go('assessments')}><ClipboardDocumentCheckIcon aria-hidden className="size-4" /> Take an assessment</Button>
               </div>
             </div>
           ) : <p className="text-sm text-white/70">All milestones are complete. Verify your skills with an assessment.</p>}

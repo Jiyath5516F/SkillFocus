@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
+@plugin "@tailwindcss/typography";
 
 /* Mira UI: dark Headless UI style (black canvas, translucent white surfaces, purple/blue glow). */
 @theme {

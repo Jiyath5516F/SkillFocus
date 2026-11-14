@@ -133,11 +133,11 @@ export function Assessments() {
                     </span>
                   </div>
                   <div className="ml-5 mt-1 text-white/70">
-                    Your answer: {r.chosen !== null ? q.options[r.chosen] : '—'}
+                    Your answer: {r.chosenAnswer ?? '—'}
                     {!r.correct && (
                       <>
                         {' '}
-                        · Correct: <span className="font-medium text-white">{q.options[r.correctIndex]}</span>
+                        · Correct: <span className="font-medium text-white">{r.correctAnswer}</span>
                       </>
                     )}
                   </div>
@@ -159,7 +159,8 @@ export function Assessments() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{quiz.title}</h1>
             <p className="mt-1 text-sm text-white/60">
-              {quiz.questions.length} questions · {skillName(quiz.skillId)} · answers are graded against a fixed key
+              {quiz.questions.length} questions · {skillName(quiz.skillId)} · options are shuffled each attempt and
+              graded against a fixed key
             </p>
           </div>
           <Button variant="ghost" onClick={() => setQuiz(null)}>
@@ -189,10 +190,10 @@ export function Assessments() {
                   aria-label={`Answer to question ${i + 1}`}
                   className="mt-3 grid gap-2 sm:grid-cols-2"
                 >
-                  {q.options.map((o, oi) => (
+                  {q.options.map((o) => (
                     <Radio
-                      key={oi}
-                      value={oi}
+                      key={o.id}
+                      value={o.id}
                       data-question={q.id}
                       className="group flex cursor-pointer items-center gap-2.5 rounded-lg border border-white/10 px-3 py-2 text-sm hover:bg-white/10 focus:outline-none data-checked:border-indigo-400/60 data-checked:bg-indigo-500/15 data-checked:ring-1 data-checked:ring-indigo-400/60 data-focus:ring-2 data-focus:outline-2 data-focus:outline-white/40"
                     >
@@ -202,7 +203,7 @@ export function Assessments() {
                       >
                         <span className="invisible h-2 w-2 rounded-full bg-white group-data-checked:visible" />
                       </span>
-                      <span className="code-block">{o}</span>
+                      <span className="code-block">{o.text}</span>
                     </Radio>
                   ))}
                 </RadioGroup>

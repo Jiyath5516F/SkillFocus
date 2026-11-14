@@ -192,7 +192,7 @@ export function registerRoles(roles: RoleDef[] | undefined) {
 }
 
 // Curated, free, well-known learning resources. Only these IDs may be recommended by agents.
-export const RESOURCES: Resource[] = [
+export const RESOURCES: readonly Resource[] = [
   {
     id: 'mdn-learn-web',
     skillId: 'html',
@@ -652,40 +652,68 @@ export const RESOURCES: Resource[] = [
   },
 ];
 
-export const RESOURCE_BY_ID = indexById(RESOURCES);
+const CURATED_BY_ID = indexById([...RESOURCES]);
 
 export const skillName = (id: string) => SKILL_BY_ID[id]?.name ?? id;
 
 /**
- * Custom skills (added by the learner or proposed for a custom aim) are registered at runtime.
- * They have no curated course list, so they get transparent *search* links instead of invented URLs.
+ * Custom skills (added by the learner or proposed for a custom aim) are registered at runtime under owner-scoped ids.
+ * They have no curated course list, so they get transparent *search* links instead of invented URLs. Those links are
+ * derived from the skill on demand, so nothing user-specific is ever added to the shared curated catalog.
  */
 export function registerSkills(skills: SkillDef[] | undefined) {
-  for (const sk of skills ?? []) {
-    if (!sk.id.startsWith('cs-') || SKILL_BY_ID[sk.id]) continue;
-    SKILL_BY_ID[sk.id] = sk;
-    const q = encodeURIComponent(sk.name);
-    for (const r of [
-      {
-        id: `${sk.id}~yt`,
-        title: `${sk.name} tutorials (YouTube search)`,
-        provider: 'YouTube',
-        url: `https://www.youtube.com/results?search_query=${q}+tutorial`,
-        hours: 6,
-      },
-      {
-        id: `${sk.id}~coursera`,
-        title: `${sk.name} courses (Coursera search)`,
-        provider: 'Coursera',
-        url: `https://www.coursera.org/search?query=${q}`,
-        hours: 10,
-      },
-    ]) {
-      const res: Resource = { ...r, skillId: sk.id, kind: 'search' };
-      RESOURCES.push(res);
-      RESOURCE_BY_ID[res.id] = res;
-    }
-  }
+  for (const sk of skills ?? []) if (sk.id.startsWith('cs-') && !SKILL_BY_ID[sk.id]) SKILL_BY_ID[sk.id] = sk;
+}
+
+const SEARCH_LINKS = {
+  yt: {
+    provider: 'YouTube',
+    hours: 6,
+    title: '%s tutorials (YouTube search)',
+    url: 'https://www.youtube.com/results?search_query=%s+tutorial',
+  },
+  coursera: {
+    provider: 'Coursera',
+    hours: 10,
+    title: '%s courses (Coursera search)',
+    url: 'https://www.coursera.org/search?query=%s',
+  },
+} as const;
+
+function searchResource(skill: SkillDef, key: keyof typeof SEARCH_LINKS): Resource {
+  const l = SEARCH_LINKS[key];
+  return {
+    id: `${skill.id}~${key}`,
+    skillId: skill.id,
+    kind: 'search',
+    provider: l.provider,
+    hours: l.hours,
+    title: l.title.replace('%s', skill.name),
+    url: l.url.replace('%s', encodeURIComponent(skill.name)),
+  };
+}
+
+/** Learning resources for a skill: the curated list for catalog skills, search links for custom skills. */
+export function resourcesForSkill(skillId: string): Resource[] {
+  const skill = SKILL_BY_ID[skillId];
+  if (skill?.id.startsWith('cs-'))
+    return (Object.keys(SEARCH_LINKS) as (keyof typeof SEARCH_LINKS)[]).map((k) => searchResource(skill, k));
+  return RESOURCES.filter((r) => r.skillId === skillId);
+}
+
+/** Resolves resource ids, silently dropping unknown ones (e.g. a custom skill that was later removed). */
+export function resolveResources(ids: readonly string[]): Resource[] {
+  return ids.map(findResource).filter((r): r is Resource => r !== undefined);
+}
+
+/** Looks up a resource id from either the curated catalog or a registered custom skill's search links. */
+export function findResource(id: string): Resource | undefined {
+  if (CURATED_BY_ID[id]) return CURATED_BY_ID[id];
+  const [skillId, key] = id.split('~');
+  const skill = SKILL_BY_ID[skillId];
+  return skill?.id.startsWith('cs-') && Object.hasOwn(SEARCH_LINKS, key)
+    ? searchResource(skill, key as keyof typeof SEARCH_LINKS)
+    : undefined;
 }
 
 /** Builds a custom skill definition for a free-text skill name. */

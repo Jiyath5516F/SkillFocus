@@ -1,4 +1,7 @@
 // Assessment banks with answer keys. Server-only: answer keys never reach the client.
+// Correct answers are spread evenly across option positions, and options are served in a fresh random order on every
+// attempt, so no fixed answering pattern ("always B") can earn a verified level.
+import { randomInt } from 'node:crypto';
 import { indexById } from '../shared/catalog';
 import type { PublicAssessment } from '../shared/types';
 
@@ -37,8 +40,8 @@ export const ASSESSMENTS: AssessmentDef[] = [
         concept: 'types',
         prompt: 'What does this print?',
         code: 'console.log(typeof null);',
-        options: ['"null"', '"object"', '"undefined"', '"number"'],
-        answer: 1,
+        options: ['"null"', '"undefined"', '"object"', '"number"'],
+        answer: 2,
         explanation: 'typeof null is "object" — a historical quirk of JavaScript.',
       },
       {
@@ -46,8 +49,8 @@ export const ASSESSMENTS: AssessmentDef[] = [
         concept: 'types',
         prompt: 'What are the results of these comparisons?',
         code: "0 == '0';   // ?\n0 === '0';  // ?",
-        options: ['true, true', 'false, false', 'true, false', 'false, true'],
-        answer: 2,
+        options: ['true, false', 'false, false', 'true, true', 'false, true'],
+        answer: 0,
         explanation: '== coerces types before comparing; === compares type and value, so 0 !== "0".',
       },
       {
@@ -55,8 +58,8 @@ export const ASSESSMENTS: AssessmentDef[] = [
         concept: 'closures',
         prompt: 'What does this print?',
         code: 'function counter() {\n  let n = 0;\n  return () => ++n;\n}\nconst c = counter();\nc();\nconsole.log(c());',
-        options: ['0', '1', '2', 'undefined'],
-        answer: 2,
+        options: ['0', '1', 'undefined', '2'],
+        answer: 3,
         explanation: 'The returned arrow function closes over n, so state persists between calls: 1, then 2.',
       },
       {
@@ -74,8 +77,8 @@ export const ASSESSMENTS: AssessmentDef[] = [
         concept: 'arrays_objects',
         prompt: 'What is the result?',
         code: '[1, 2, 3].map(x => x * 2).filter(x => x > 2);',
-        options: ['[2, 4, 6]', '[4, 6]', '[3]', '[2]'],
-        answer: 1,
+        options: ['[2, 4, 6]', '[2]', '[3]', '[4, 6]'],
+        answer: 3,
         explanation: 'map gives [2, 4, 6]; filter keeps values greater than 2 → [4, 6].',
       },
       {
@@ -83,8 +86,8 @@ export const ASSESSMENTS: AssessmentDef[] = [
         concept: 'async',
         prompt: 'In what order are the letters logged?',
         code: "console.log('A');\nsetTimeout(() => console.log('B'), 0);\nPromise.resolve().then(() => console.log('C'));\nconsole.log('D');",
-        options: ['A B C D', 'A D B C', 'A D C B', 'A C D B'],
-        answer: 2,
+        options: ['A D C B', 'A D B C', 'A B C D', 'A C D B'],
+        answer: 0,
         explanation:
           'Synchronous code runs first (A, D), then microtasks (promise → C), then macrotasks (timeout → B).',
       },
@@ -92,8 +95,8 @@ export const ASSESSMENTS: AssessmentDef[] = [
         id: 'js7',
         concept: 'async',
         prompt: 'What does an async function always return?',
-        options: ['The value of its return statement', 'A Promise', 'undefined until awaited', 'A callback'],
-        answer: 1,
+        options: ['The value of its return statement', 'undefined until awaited', 'A Promise', 'A callback'],
+        answer: 2,
         explanation: 'An async function always returns a Promise that resolves to its return value.',
       },
       {
@@ -127,8 +130,8 @@ export const ASSESSMENTS: AssessmentDef[] = [
         id: 'sq1',
         concept: 'filtering',
         prompt: 'Which clause filters rows before grouping?',
-        options: ['HAVING', 'WHERE', 'ORDER BY', 'GROUP BY'],
-        answer: 1,
+        options: ['HAVING', 'GROUP BY', 'ORDER BY', 'WHERE'],
+        answer: 3,
         explanation: 'WHERE filters rows before aggregation; HAVING filters groups after it.',
       },
       {
@@ -136,8 +139,8 @@ export const ASSESSMENTS: AssessmentDef[] = [
         concept: 'joins',
         prompt: 'Which join keeps every customer, even those with no orders?',
         code: 'SELECT c.name, o.id\nFROM customers c\n____ orders o ON o.customer_id = c.id;',
-        options: ['INNER JOIN', 'LEFT JOIN', 'RIGHT JOIN on customers', 'CROSS JOIN'],
-        answer: 1,
+        options: ['LEFT JOIN', 'INNER JOIN', 'RIGHT JOIN on customers', 'CROSS JOIN'],
+        answer: 0,
         explanation:
           'LEFT JOIN keeps all rows from the left table (customers) and fills missing order columns with NULL.',
       },
@@ -145,8 +148,8 @@ export const ASSESSMENTS: AssessmentDef[] = [
         id: 'sq3',
         concept: 'aggregation',
         prompt: 'How do you keep only categories with more than 10 products?',
-        options: ['WHERE COUNT(*) > 10', 'HAVING COUNT(*) > 10', 'FILTER COUNT(*) > 10', 'GROUP BY COUNT(*) > 10'],
-        answer: 1,
+        options: ['WHERE COUNT(*) > 10', 'FILTER COUNT(*) > 10', 'HAVING COUNT(*) > 10', 'GROUP BY COUNT(*) > 10'],
+        answer: 2,
         explanation: 'Aggregate conditions go in HAVING, after GROUP BY.',
       },
       {
@@ -161,9 +164,19 @@ export const ASSESSMENTS: AssessmentDef[] = [
         id: 'sq5',
         concept: 'aggregation',
         prompt: 'COUNT(column) differs from COUNT(*) because it…',
-        options: ['counts distinct values', 'ignores NULLs in that column', 'is faster', 'counts columns'],
-        answer: 1,
+        options: ['ignores NULLs in that column', 'counts distinct values', 'is faster', 'counts columns'],
+        answer: 0,
         explanation: 'COUNT(column) skips NULLs; COUNT(*) counts every row.',
+      },
+      {
+        id: 'sq6',
+        concept: 'joins',
+        prompt: 'customers has 3 rows and orders has 5 rows (every order has a matching customer). How many rows?',
+        code: 'SELECT *\nFROM customers c\nINNER JOIN orders o ON o.customer_id = c.id;',
+        options: ['3', '8', '15', '5'],
+        answer: 3,
+        explanation:
+          'An inner join returns one row per matching pair: each of the 5 orders matches exactly one customer.',
       },
     ],
   },
@@ -191,8 +204,8 @@ export const ASSESSMENTS: AssessmentDef[] = [
         id: 'py2',
         concept: 'data_structures',
         prompt: 'Which type can be used as a dictionary key?',
-        options: ['list', 'dict', 'tuple of ints', 'set'],
-        answer: 2,
+        options: ['list', 'dict', 'set', 'tuple of ints'],
+        answer: 3,
         explanation: 'Keys must be hashable; tuples of immutable values are hashable, lists/dicts/sets are not.',
       },
       {
@@ -200,8 +213,8 @@ export const ASSESSMENTS: AssessmentDef[] = [
         concept: 'functions',
         prompt: 'What does this print on the second call?',
         code: 'def add(item, bucket=[]):\n    bucket.append(item)\n    return bucket\n\nadd(1)\nprint(add(2))',
-        options: ['[2]', '[1, 2]', '[]', 'Error'],
-        answer: 1,
+        options: ['[1, 2]', '[2]', '[]', 'Error'],
+        answer: 0,
         explanation:
           'Default arguments are evaluated once, so the same list is reused across calls. Use bucket=None instead.',
       },
@@ -210,16 +223,16 @@ export const ASSESSMENTS: AssessmentDef[] = [
         concept: 'comprehensions',
         prompt: 'What is the result?',
         code: '[x * x for x in range(5) if x % 2 == 0]',
-        options: ['[0, 4, 16]', '[1, 9]', '[0, 1, 4, 9, 16]', '[4, 16]'],
-        answer: 0,
+        options: ['[0, 1, 4, 9, 16]', '[1, 9]', '[0, 4, 16]', '[4, 16]'],
+        answer: 2,
         explanation: 'range(5) gives 0–4; keeping even numbers 0, 2, 4 and squaring gives [0, 4, 16].',
       },
       {
         id: 'py5',
         concept: 'comprehensions',
         prompt: 'What does `zip([1, 2, 3], "ab")` produce when converted to a list?',
-        options: ["[(1, 'a'), (2, 'b'), (3, None)]", "[(1, 'a'), (2, 'b')]", 'An error', "[1, 'a', 2, 'b']"],
-        answer: 1,
+        options: ["[(1, 'a'), (2, 'b'), (3, None)]", "[1, 'a', 2, 'b']", 'An error', "[(1, 'a'), (2, 'b')]"],
+        answer: 3,
         explanation: 'zip stops at the shortest iterable.',
       },
       {
@@ -227,12 +240,12 @@ export const ASSESSMENTS: AssessmentDef[] = [
         concept: 'errors',
         prompt: 'Why is `with open("data.csv") as f:` preferred over `f = open("data.csv")`?',
         options: [
-          'It reads faster',
           'It closes the file even if an error occurs',
+          'It reads faster',
           'It loads the file into memory',
           'It is required for CSV files',
         ],
-        answer: 1,
+        answer: 0,
         explanation: 'The context manager guarantees the file is closed when the block exits, including on exceptions.',
       },
     ],
@@ -241,12 +254,37 @@ export const ASSESSMENTS: AssessmentDef[] = [
 
 export const ASSESSMENT_BY_ID = indexById(ASSESSMENTS);
 
+/** Fisher–Yates shuffle with a CSPRNG (returns a new array). */
+export function shuffled<T>(items: readonly T[]): T[] {
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = randomInt(i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Client view of an assessment: no answer keys, options shuffled per request and identified by their bank index. */
 export function toPublic(a: AssessmentDef): PublicAssessment {
   return {
     id: a.id,
     skillId: a.skillId,
     title: a.title,
     concepts: a.concepts,
-    questions: a.questions.map(({ id, concept, prompt, code, options }) => ({ id, concept, prompt, code, options })),
+    questions: a.questions.map(({ id, concept, prompt, code, options }) => ({
+      id,
+      concept,
+      prompt,
+      code,
+      options: shuffled(options.map((text, i) => ({ id: i, text }))),
+    })),
   };
 }
+
+/** Lightweight listing for the assessments page (question count only). */
+export const toSummary = (a: AssessmentDef) => ({
+  id: a.id,
+  skillId: a.skillId,
+  title: a.title,
+  questions: a.questions.length,
+});

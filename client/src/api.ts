@@ -5,7 +5,6 @@ import type {
   MentorMessage,
   Profile,
   PublicAssessment,
-  Resource,
   RoleDef,
   SkillDef,
   MilestoneStatus,
@@ -62,7 +61,6 @@ export interface CohortReport {
 export interface Meta {
   roles: RoleDef[];
   skills: SkillDef[];
-  resources: Resource[];
   assessments: { id: string; skillId: string; title: string; questions: number }[];
 }
 

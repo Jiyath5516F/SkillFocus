@@ -1,13 +1,13 @@
 // Learner routes: profile, goals, custom aims and skills, roadmap progress, mentor, cohort and agent runs.
 import express from 'express';
 import { z } from 'zod';
-import { ROLES, ROLE_BY_ID, RESOURCES, SKILLS, customSkill, registerRoles, registerSkills } from '../../shared/catalog';
+import { ROLES, ROLE_BY_ID, SKILLS, customSkill, registerRoles, registerSkills } from '../../shared/catalog';
 import type { MilestoneStatus } from '../../shared/types';
 import { mentorReply } from '../agents/mentor';
 import { designRoles, resolveSkill, sanitizeRole } from '../agents/roleDesigner';
 import { type User } from '../auth';
 import { cohortReport } from '../cohort';
-import { ASSESSMENTS } from '../assessments';
+import { ASSESSMENTS, toSummary } from '../assessments';
 import * as store from '../db';
 import { describeError } from '../llm';
 import { BusyError, recordSingleStep, startAnalyze, startGoalChange } from '../orchestrator';
@@ -21,13 +21,7 @@ learnerRouter.get('/meta', (_req, res) =>
   res.json({
     roles: ROLES,
     skills: SKILLS,
-    resources: RESOURCES,
-    assessments: ASSESSMENTS.map((a) => ({
-      id: a.id,
-      skillId: a.skillId,
-      title: a.title,
-      questions: a.questions.length,
-    })),
+    assessments: ASSESSMENTS.map(toSummary),
   }),
 );
 learnerRouter.get('/state', (_req, res) => res.json(buildState()));

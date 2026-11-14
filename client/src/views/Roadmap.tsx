@@ -7,7 +7,7 @@ import {
   SparklesIcon,
 } from '@heroicons/react/20/solid';
 import { useState } from 'react';
-import { LEVEL_LABELS, RESOURCE_BY_ID, ROLE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
+import { LEVEL_LABELS, resolveResources, ROLE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
 import type { MilestoneStatus } from '../../../shared/types';
 import { useApp } from '../App';
 import { api } from '../api';
@@ -225,25 +225,22 @@ export function Roadmap() {
                           Resources
                         </div>
                         <ul className="space-y-1.5">
-                          {m.resourceIds
-                            .map((id) => RESOURCE_BY_ID[id])
-                            .filter(Boolean)
-                            .map((r) => (
-                              <li key={r.id} className="text-sm">
-                                <a
-                                  href={r.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="font-medium text-indigo-300 hover:underline"
-                                >
-                                  {r.title} <ArrowTopRightOnSquareIcon aria-hidden className="inline size-3.5" />
-                                </a>
-                                <span className="text-white/60">
-                                  {' '}
-                                  · {r.provider} · {r.kind} · ~{r.hours}h
-                                </span>
-                              </li>
-                            ))}
+                          {resolveResources(m.resourceIds).map((r) => (
+                            <li key={r.id} className="text-sm">
+                              <a
+                                href={r.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-medium text-indigo-300 hover:underline"
+                              >
+                                {r.title} <ArrowTopRightOnSquareIcon aria-hidden className="inline size-3.5" />
+                              </a>
+                              <span className="text-white/60">
+                                {' '}
+                                · {r.provider} · {r.kind} · ~{r.hours}h
+                              </span>
+                            </li>
+                          ))}
                         </ul>
                       </div>
                       <div>

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { RESOURCE_BY_ID } from '../shared/catalog';
+import { findResource } from '../shared/catalog';
 import { computeTwin } from '../shared/engine';
 import type { AssessmentAttempt, Profile } from '../shared/types';
 import { sanitizeMatching } from '../server/agents/careerMatching';
@@ -55,6 +55,32 @@ describe('grading', () => {
     assert.ok(!JSON.stringify(toPublic(js)).includes('"answer"'));
     assert.ok(!JSON.stringify(toPublic(js)).includes('explanation'));
   });
+  it('serves every option exactly once, in a shuffled order', () => {
+    const orders = new Set<string>();
+    for (let i = 0; i < 20; i++) {
+      const q = toPublic(js).questions[0];
+      assert.deepEqual(q.options.map((o) => o.text).sort(), [...js.questions[0].options].sort());
+      assert.ok(
+        q.options.every((o) => js.questions[0].options[o.id] === o.text),
+        'ids map back to the bank',
+      );
+      orders.add(q.options.map((o) => o.id).join());
+    }
+    assert.ok(orders.size > 1, 'order changes between attempts');
+  });
+  it('no fixed answering pattern earns a verified level', () => {
+    for (const a of Object.values(ASSESSMENT_BY_ID)) {
+      for (let k = 0; k < 4; k++) {
+        const g = grade(a, Object.fromEntries(a.questions.map((q) => [q.id, k])));
+        assert.equal(g.verifiedLevel, 0, `${a.id}: always option ${k} scored ${g.score}%`);
+      }
+    }
+  });
+  it('records answer text so the review is independent of display order', () => {
+    const g = grade(js, Object.fromEntries(js.questions.map((q) => [q.id, q.answer])));
+    assert.equal(g.questionResults[0].chosenAnswer, js.questions[0].options[js.questions[0].answer]);
+    assert.equal(g.questionResults[0].correctAnswer, g.questionResults[0].chosenAnswer);
+  });
 });
 
 describe('roadmap assembly', () => {
@@ -82,7 +108,7 @@ describe('roadmap assembly', () => {
     assert.deepEqual(m.resourceIds, ['jsinfo']);
     assert.equal(m.effortHours, 80, 'effort is clamped');
     assert.equal(m.authoredBy, 'ai');
-    assert.ok(ms.every((x) => x.resourceIds.every((id) => RESOURCE_BY_ID[id])));
+    assert.ok(ms.every((x) => x.resourceIds.every((id) => findResource(id))));
   });
   it('falls back to rule-based templates when AI output is missing', () => {
     const ms = assemble(slots, null);

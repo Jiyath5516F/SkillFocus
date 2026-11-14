@@ -6,7 +6,7 @@ import {
 } from '@heroicons/react/20/solid';
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react';
 import { useState } from 'react';
-import { LEVEL_LABELS, RESOURCE_BY_ID, ROLE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
+import { LEVEL_LABELS, resolveResources, ROLE_BY_ID, milestoneLabel, skillName } from '../../../shared/catalog';
 import { useApp } from '../App';
 import { allRoles } from '../roles';
 import { FORECAST_TARGET, useForecast } from '../forecast';
@@ -154,20 +154,17 @@ export function Overview() {
               </div>
               <p className="mt-2 text-sm text-white/70">{next.reason}</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {next.resourceIds
-                  .map((id) => RESOURCE_BY_ID[id])
-                  .filter(Boolean)
-                  .map((r) => (
-                    <a
-                      key={r.id}
-                      href={r.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-md border border-white/10 px-2.5 py-1 text-xs text-indigo-300 hover:bg-white/10"
-                    >
-                      {r.title} · {r.provider} <ArrowTopRightOnSquareIcon aria-hidden className="inline size-3.5" />
-                    </a>
-                  ))}
+                {resolveResources(next.resourceIds).map((r) => (
+                  <a
+                    key={r.id}
+                    href={r.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-md border border-white/10 px-2.5 py-1 text-xs text-indigo-300 hover:bg-white/10"
+                  >
+                    {r.title} · {r.provider} <ArrowTopRightOnSquareIcon aria-hidden className="inline size-3.5" />
+                  </a>
+                ))}
               </div>
               <div className="mt-4 flex gap-2">
                 <Button onClick={() => go('roadmap')}>

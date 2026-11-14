@@ -165,7 +165,8 @@ export interface PublicQuestion {
   concept: string;
   prompt: string;
   code?: string;
-  options: string[];
+  /** Shown in a fresh random order on every attempt; `id` is what the learner submits. */
+  options: { id: number; text: string }[];
 }
 
 export interface PublicAssessment {
@@ -188,6 +189,8 @@ export interface QuestionResult {
   concept: string;
   chosen: number | null;
   correctIndex: number;
+  chosenAnswer: string | null; // option text, so the review never depends on display order
+  correctAnswer: string;
   correct: boolean;
   explanation: string;
 }

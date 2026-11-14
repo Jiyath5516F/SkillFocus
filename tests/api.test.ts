@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import type { AddressInfo } from 'node:net';
 import { after, before, describe, it } from 'node:test';
 import type { AgentRun, AppState } from '../shared/types';
+import { ASSESSMENT_BY_ID } from '../server/assessments';
 
 process.env.MIRA_DB_PATH = ':memory:';
 for (const k of ['SKILLFOCUS_ANTHROPIC_API_KEY', 'MIRA_ANTHROPIC_API_KEY', 'ANTHROPIC_API_KEY']) process.env[k] = '';
@@ -231,6 +232,8 @@ describe('custom career aims', () => {
       sessionFrom(other.headers),
     );
     assert.equal(r.status, 400, "cannot claim another learner's custom skill");
+    const meta = await call('/meta', 'GET', undefined, sessionFrom(other.headers));
+    assert.ok(!JSON.stringify(meta.json).includes('KiCad'), "another learner's custom skills never appear in /meta");
   });
   it('turns new skill names in a designed aim into custom skills', async () => {
     const r = await call('/roles', 'POST', {
@@ -278,9 +281,9 @@ describe('core scenarios without AI (rule-based fallback)', () => {
   it('Scenario B: a failed JavaScript check inserts remediation before React', async () => {
     await call('/demo/reset', 'POST');
     await waitRun((await call('/analyze', 'POST')).json.runId);
-    const KEY: Record<string, number> = { js1: 1, js2: 2, js3: 2, js4: 1, js5: 1, js6: 2, js7: 1, js8: 1 };
+    // Right on the two "types" questions, wrong elsewhere → 2/8.
     const answers = Object.fromEntries(
-      Object.entries(KEY).map(([k, v]) => [k, ['js1', 'js2'].includes(k) ? v : (v + 1) % 4]),
+      ASSESSMENT_BY_ID['js-core'].questions.map((q) => [q.id, q.concept === 'types' ? q.answer : (q.answer + 1) % 4]),
     );
     const sub = await call('/assessments/js-core/submit', 'POST', { answers });
     assert.equal(sub.json.attempt.score, 25);

@@ -3,7 +3,7 @@
 // connectors line up exactly with the nodes. Every node opens a Headless UI Popover with full details.
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { ArrowTopRightOnSquareIcon, CheckIcon } from '@heroicons/react/20/solid';
-import { LEVEL_LABELS, RESOURCE_BY_ID, skillName } from '../../../shared/catalog';
+import { LEVEL_LABELS, resolveResources, skillName } from '../../../shared/catalog';
 import type { Milestone, MilestoneProgress, MilestoneStatus, Resource } from '../../../shared/types';
 import { Segmented } from './hui';
 import { Badge } from './ui';
@@ -49,10 +49,7 @@ function groupBySkill(milestones: Milestone[]): Group[] {
 function layout(groups: Group[]) {
   let y = TOP;
   const blocks = groups.map((g, i) => {
-    const res: Side[] = g.main.resourceIds
-      .map((id) => RESOURCE_BY_ID[id])
-      .filter(Boolean)
-      .map((r) => ({ kind: 'res', r }));
+    const res: Side[] = resolveResources(g.main.resourceIds).map((r) => ({ kind: 'res', r }));
     const fixes: Side[] = g.fixes.map((m) => ({ kind: 'fix', m }));
     // Remediation goes on the side with more room; alternate sides between groups like roadmap.sh.
     const left = i % 2 === 0 ? (fixes.length ? fixes : res) : fixes.length ? res : [];
@@ -131,17 +128,14 @@ function Details({
           Resources · ~{m.effortHours}h
         </div>
         <ul className="space-y-1">
-          {m.resourceIds
-            .map((id) => RESOURCE_BY_ID[id])
-            .filter(Boolean)
-            .map((r) => (
-              <li key={r.id}>
-                <a href={r.url} target="_blank" rel="noreferrer" className="text-indigo-300 hover:text-indigo-200">
-                  {r.title} <ArrowTopRightOnSquareIcon aria-hidden className="inline size-3.5" />
-                </a>{' '}
-                <span className="text-white/60">· {r.provider}</span>
-              </li>
-            ))}
+          {resolveResources(m.resourceIds).map((r) => (
+            <li key={r.id}>
+              <a href={r.url} target="_blank" rel="noreferrer" className="text-indigo-300 hover:text-indigo-200">
+                {r.title} <ArrowTopRightOnSquareIcon aria-hidden className="inline size-3.5" />
+              </a>{' '}
+              <span className="text-white/60">· {r.provider}</span>
+            </li>
+          ))}
         </ul>
       </div>
       {editable && (

@@ -2,7 +2,7 @@
 import express from 'express';
 import { z } from 'zod';
 import { ROLE_BY_ID } from '../../shared/catalog';
-import { ASSESSMENTS, ASSESSMENT_BY_ID, toPublic } from '../assessments';
+import { ASSESSMENTS, ASSESSMENT_BY_ID, toPublic, toSummary } from '../assessments';
 import * as store from '../db';
 import { countAnswered, grade } from '../grading';
 import { currentSnapshot, startAssessmentRun } from '../orchestrator';
@@ -10,7 +10,7 @@ import { aiLimit, BUSY, RETAKE_COOLDOWN_MS, sendErr } from '../http';
 
 export const assessmentRouter = express.Router();
 
-assessmentRouter.get('/assessments', (_req, res) => res.json(ASSESSMENTS.map(toPublic)));
+assessmentRouter.get('/assessments', (_req, res) => res.json(ASSESSMENTS.map(toSummary)));
 assessmentRouter.get('/assessments/:id', (req, res) => {
   const a = ASSESSMENT_BY_ID[String(req.params.id)];
   return a ? res.json(toPublic(a)) : res.status(404).json({ error: 'Assessment not found' });

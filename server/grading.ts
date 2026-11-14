@@ -27,6 +27,8 @@ export function grade(def: AssessmentDef, answers: Answers): GradeResult {
       concept: q.concept,
       chosen,
       correctIndex: q.answer,
+      chosenAnswer: chosen === null ? null : (q.options[chosen] ?? null),
+      correctAnswer: q.options[q.answer],
       correct: chosen === q.answer,
       explanation: q.explanation,
     };

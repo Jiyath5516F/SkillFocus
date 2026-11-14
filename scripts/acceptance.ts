@@ -1,7 +1,8 @@
 // End-to-end acceptance tests against a running Mira API (real agent runs, real Claude calls).
 // Usage: npm run acceptance            (tests 1–3)
 //        npm run acceptance -- persist (after a server restart: checks the Data Analyst plan survived)
-import { RESOURCE_BY_ID } from '../shared/catalog';
+import { findResource } from '../shared/catalog';
+import { ASSESSMENT_BY_ID } from '../server/assessments';
 import { computeTwin } from '../shared/engine';
 import type { AgentRun, AppState, AssessmentAttempt, MentorMessage, PublicAssessment } from '../shared/types';
 
@@ -81,7 +82,7 @@ async function test1() {
   const ms = s.roadmap?.milestones ?? [];
   check(ms.length >= 4, '≥4 roadmap milestones', String(ms.length));
   check(
-    ms.every((m) => m.resourceIds.length > 0 && m.resourceIds.every((id) => RESOURCE_BY_ID[id])),
+    ms.every((m) => m.resourceIds.length > 0 && m.resourceIds.every((id) => findResource(id))),
     'every resource comes from the curated catalog',
   );
   const reply = await ask('Why should I learn JavaScript before React?');
@@ -104,7 +105,7 @@ async function test2() {
   const quiz = await call<PublicAssessment>('/assessments/js-core');
   check(!JSON.stringify(quiz).includes('"answer"'), 'answer keys are not sent to the client');
   // Deliberately weak attempt: correct on the two "types" questions, wrong elsewhere → 2/8.
-  const KEY: Record<string, number> = { js1: 1, js2: 2, js3: 2, js4: 1, js5: 1, js6: 2, js7: 1, js8: 1 };
+  const KEY = Object.fromEntries(ASSESSMENT_BY_ID['js-core'].questions.map((q) => [q.id, q.answer]));
   const answers = Object.fromEntries(
     quiz.questions.map((q) => [q.id, q.concept === 'types' ? KEY[q.id] : (KEY[q.id] + 1) % 4]),
   );

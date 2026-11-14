@@ -1,6 +1,6 @@
 // Deterministic roadmap structure: slot order (prerequisites + remediation placement), templates, assembly.
 import { orderByPrereqs } from '../shared/engine';
-import { LEVEL_LABELS, RESOURCES, ROLE_BY_ID, SKILL_BY_ID, skillName } from '../shared/catalog';
+import { LEVEL_LABELS, ROLE_BY_ID, SKILL_BY_ID, resourcesForSkill, skillName } from '../shared/catalog';
 import type {
   AssessmentAttempt,
   Milestone,
@@ -51,6 +51,7 @@ export function buildSlots(twin: TwinResult, attempts: AssessmentAttempt[], crit
   const slots: Slot[] = [];
   for (const skillId of order) {
     const req = twin.requirements.find((r) => r.skillId === skillId)!;
+    const resources = resourcesForSkill(skillId);
     const prereqs = (SKILL_BY_ID[skillId]?.prereqs ?? []).filter((p) => role.requirements.some((r) => r.skillId === p));
     slots.push({
       key: `learn:${skillId}`,
@@ -58,14 +59,14 @@ export function buildSlots(twin: TwinResult, attempts: AssessmentAttempt[], crit
       kind: 'learn',
       targetLevel: req.required,
       prerequisites: prereqs,
-      candidates: RESOURCES.filter((r) => r.skillId === skillId && !r.concepts),
+      candidates: resources.filter((r) => !r.concepts),
       impact: req.impact,
       priority: req.priority,
     });
     // Targeted remediation goes right after the skill's learn milestone — i.e. before anything that depends on it.
     if (gapSet.has(skillId)) {
       for (const concept of weak[skillId] ?? []) {
-        const specific = RESOURCES.filter((r) => r.skillId === skillId && r.concepts?.includes(concept));
+        const specific = resources.filter((r) => r.concepts?.includes(concept));
         slots.push({
           key: `fix:${skillId}:${concept}`,
           skillId,
@@ -74,7 +75,7 @@ export function buildSlots(twin: TwinResult, attempts: AssessmentAttempt[], crit
           conceptLabel: conceptLabel(skillId, concept),
           targetLevel: req.required,
           prerequisites: [skillId],
-          candidates: specific.length ? specific : RESOURCES.filter((r) => r.skillId === skillId),
+          candidates: specific.length ? specific : resources,
           impact: req.impact,
           priority: 'high',
         });

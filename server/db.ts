@@ -6,6 +6,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { registerRoles, registerSkills } from '../shared/catalog';
+import { ASSESSMENT_BY_ID } from './assessments';
 import type {
   AgentRun,
   AgentStep,
@@ -145,10 +146,22 @@ export function updateAttempt(a: AssessmentAttempt) {
   cur().prepare('UPDATE assessment_attempt SET data = ? WHERE id = ?').run(JSON.stringify(rest), id);
 }
 export function listAttempts(): AssessmentAttempt[] {
-  return (cur().prepare('SELECT id, data FROM assessment_attempt ORDER BY id DESC').all() as Row[]).map((r) => ({
-    ...JSON.parse(r.data as string),
-    id: r.id as number,
-  }));
+  return (cur().prepare('SELECT id, data FROM assessment_attempt ORDER BY id DESC').all() as Row[]).map((r) =>
+    withAnswerText({ ...JSON.parse(r.data as string), id: r.id as number }),
+  );
+}
+
+/** Attempts saved before answer text was recorded: recover the correct answer; a wrong choice can't be recovered. */
+function withAnswerText(a: AssessmentAttempt): AssessmentAttempt {
+  const def = ASSESSMENT_BY_ID[a.assessmentId];
+  if (!def || a.questionResults.every((q) => q.correctAnswer !== undefined)) return a;
+  const questionResults = a.questionResults.map((q) => {
+    if (q.correctAnswer !== undefined) return q;
+    const bank = def.questions.find((x) => x.id === q.questionId);
+    const correctAnswer = bank ? bank.options[bank.answer] : '';
+    return { ...q, correctAnswer, chosenAnswer: q.correct ? correctAnswer : null };
+  });
+  return { ...a, questionResults };
 }
 
 // ---- roadmap revisions ----

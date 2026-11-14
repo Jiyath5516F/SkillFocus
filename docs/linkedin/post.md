@@ -1,37 +1,31 @@
 # LinkedIn post — Mira (PromptWars × Rathinam Technical Campus)
 
-**Attach:** `mira-linkedin.png` (1080×1350, feed portrait). Optional 2nd image: `../screenshots/twin.jpg`.
-**Post the links in the first comment** (LinkedIn reach is better without links in the post body).
+**Images (carousel, in this order):** 01-hero · 02-career-twin · 03-agents · 04-roadmap · 05-forecast · 06-mentor · 07-custom-aims · 08-cohort (1080×1350 each).
+**Put the links in the first comment.**
 
 ---
 
-Our demo learner finished the JavaScript course. Her readiness score went down.
+Most learning platforms believe you the moment you click "complete". So I built one that asks for proof.
 
-That's the whole idea behind Mira, the AI career-learning platform we built at PromptWars × Rathinam Technical Campus.
+At PromptWars × Rathinam Technical Campus I built Mira, an AI career-learning platform that works out what you can actually do, compares it with the role you want, and keeps the plan honest.
 
-Most learning platforms treat a completed course as a skill. Mira treats it as a claim.
+What makes it different:
+→ Career Twin: a self-rated skill counts for less than a project, and a project counts for less than a passed assessment. Every readiness number traces back to its evidence.
+→ Five collaborating AI agents: Skill Intelligence, Career Matching, Learning Path Architect, Assessment & Progress, and Mira the mentor. Every run is visible.
+→ Adaptive roadmap: score low on a quiz and the agents insert targeted practice before the skills that depend on it.
+→ Readiness forecast: see when you could reach your target at your weekly study hours.
+→ Any career aim: type a goal and Mira designs the role from skills it can teach and test.
+→ Cohort insights: universities and employers see which skill gaps are verified and which are only claimed.
 
-Here's what happened in our demo:
-→ Priya targets Full Stack Developer with Python, SQL and basic HTML.
-→ She marks JavaScript as complete. Readiness rises to 28.8%, labelled "unverified".
-→ She takes an 8-question JavaScript check and scores 2/8.
-→ Five Claude agents re-plan in about 32 seconds. The Assessment agent diagnoses closures and async, Skill Intelligence re-scores her, and the Path Architect inserts four remediation steps before React.
-→ Readiness drops to 21.2%. Honest, and she knows what to fix.
+Built with React, Headless UI, Node.js, SQLite and Claude, plus secure accounts and 43 automated tests.
 
-What we're proud of:
-• Every number comes from a transparent formula. The AI explains; it never invents scores.
-• A readiness forecast shows when she could reach 70% at 8 hours a week.
-• Universities get cohort insights: which skill gaps are verified and which are only claimed.
+What would you want a learning platform to check before it calls you job-ready?
 
-Built with React, Headless UI, Express, SQLite and Claude, with 43 automated tests.
-
-What should a learning platform verify before it calls you "job-ready"?
-
-#PromptWars #Hack2skill #EdTech #AI #CareerGrowth
+#PromptWars #Hack2skill #AI #EdTech #BuildInPublic
 
 ---
 
 **First comment:**
 
-Try it or read the code: https://github.com/Jiyath5516F/SkillFocus
-Live demo (create a free account): https://mira.bedrockgraphics.com/Mira/
+Try it (free account): https://mira.bedrockgraphics.com/Mira/
+Code: https://github.com/Jiyath5516F/SkillFocus

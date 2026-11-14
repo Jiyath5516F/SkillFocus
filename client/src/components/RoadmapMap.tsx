@@ -1,9 +1,12 @@
-// roadmap.sh-style visual roadmap: a central spine of skill nodes, with remediation steps and resources
-// branching off on dotted connectors. Every node opens a Headless UI Popover with the full milestone details.
+// roadmap.sh-style roadmap: a solid blue spine of bright-yellow skill nodes, with remediation steps and
+// resources fanning out on curved, dotted blue connectors. Layout is computed deterministically so the SVG
+// connectors line up exactly with the nodes. Every node opens a Headless UI Popover with full details.
+import '@fontsource/balsamiq-sans/400.css';
+import '@fontsource/balsamiq-sans/700.css';
 import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
-import { ArrowTopRightOnSquareIcon, CheckIcon, WrenchScrewdriverIcon } from '@heroicons/react/20/solid';
+import { ArrowTopRightOnSquareIcon, CheckIcon } from '@heroicons/react/20/solid';
 import { LEVEL_LABELS, RESOURCE_BY_ID, skillName } from '../../../shared/catalog';
-import type { Milestone, MilestoneProgress, MilestoneStatus } from '../../../shared/types';
+import type { Milestone, MilestoneProgress, MilestoneStatus, Resource } from '../../../shared/types';
 import { Segmented } from './hui';
 import { Badge } from './ui';
 
@@ -11,7 +14,19 @@ const STATUS_OPTIONS: { value: MilestoneStatus; label: string }[] = [
   { value: 'todo', label: 'To do' }, { value: 'in_progress', label: 'In progress' }, { value: 'done', label: 'Done' },
 ];
 
+// roadmap.sh palette
+const BLUE = '#2b78e4';
+const FONT = { fontFamily: '"Balsamiq Sans", ui-rounded, system-ui, sans-serif' };
+
+// Canvas geometry (px). The canvas scrolls horizontally on narrow screens, like roadmap.sh.
+const W = 1000, CX = W / 2;
+const MAIN_W = 230, MAIN_H = 46;
+const SUB_W = 250, SUB_H = 40, SUB_GAP = 10;
+const LEFT_X = 30, RIGHT_X = W - 30 - SUB_W;
+const GROUP_GAP = 46, TOP = 150;
+
 interface Group { main: Milestone; fixes: Milestone[] }
+type Side = { kind: 'fix'; m: Milestone } | { kind: 'res'; r: Resource };
 
 function groupBySkill(milestones: Milestone[]): Group[] {
   const groups: Group[] = [];
@@ -23,9 +38,34 @@ function groupBySkill(milestones: Milestone[]): Group[] {
   return groups;
 }
 
-function StatusMark({ status }: { status: MilestoneStatus }) {
-  if (status === 'done') return <span className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-neutral-950" title="Done"><CheckIcon className="size-3.5 text-black" /></span>;
-  if (status === 'in_progress') return <span className="absolute -top-1.5 -right-1.5 size-3.5 rounded-full bg-amber-400 ring-2 ring-neutral-950" title="In progress" />;
+function layout(groups: Group[]) {
+  let y = TOP;
+  const blocks = groups.map((g, i) => {
+    const res: Side[] = g.main.resourceIds.map((id) => RESOURCE_BY_ID[id]).filter(Boolean).map((r) => ({ kind: 'res', r }));
+    const fixes: Side[] = g.fixes.map((m) => ({ kind: 'fix', m }));
+    // Remediation goes on the side with more room; alternate sides between groups like roadmap.sh.
+    const left = i % 2 === 0 ? (fixes.length ? fixes : res) : (fixes.length ? res : []);
+    const right = i % 2 === 0 ? (fixes.length ? res : []) : (fixes.length ? fixes : res);
+    const colH = (n: number) => (n ? n * SUB_H + (n - 1) * SUB_GAP : 0);
+    const h = Math.max(MAIN_H, colH(left.length), colH(right.length));
+    const cy = y + h / 2;
+    const place = (items: Side[], x: number) => items.map((it, k) => ({ it, x, y: cy - colH(items.length) / 2 + k * (SUB_H + SUB_GAP) }));
+    const block = { g, cy, mainY: cy - MAIN_H / 2, left: place(left, LEFT_X), right: place(right, RIGHT_X) };
+    y += h + GROUP_GAP;
+    return block;
+  });
+  return { blocks, height: y };
+}
+
+/** Curved dotted connector from the main node edge to a side node, fanning like roadmap.sh. */
+function fan(x1: number, y1: number, x2: number, y2: number) {
+  const mx = (x1 + x2) / 2;
+  return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+}
+
+function CheckBadge({ status }: { status: MilestoneStatus }) {
+  if (status === 'done') return <span title="Done" className="absolute -top-2.5 -right-2.5 flex size-5 items-center justify-center rounded-full bg-[#874efe] ring-2 ring-white"><CheckIcon className="size-3.5 text-white" /></span>;
+  if (status === 'in_progress') return <span title="In progress" className="absolute -top-2.5 -right-2.5 flex size-5 items-center justify-center rounded-full bg-[#f59e0b] ring-2 ring-white"><span className="size-2 rounded-full bg-white" /></span>;
   return null;
 }
 
@@ -38,10 +78,7 @@ function Details({ m, status, editable, onStatus }: { m: Milestone; status: Mile
       </div>
       <p className="font-semibold text-white">{m.title}</p>
       <p className="text-white/70">{m.reason}</p>
-      <div>
-        <div className="mb-1 text-xs font-medium uppercase tracking-wide text-white/60">Practical exercise</div>
-        <p className="text-white/80">{m.exercise}</p>
-      </div>
+      <div><div className="mb-1 text-xs font-medium uppercase tracking-wide text-white/60">Practical exercise</div><p className="text-white/80">{m.exercise}</p></div>
       <div>
         <div className="mb-1 text-xs font-medium uppercase tracking-wide text-white/60">Resources · ~{m.effortHours}h</div>
         <ul className="space-y-1">
@@ -55,89 +92,83 @@ function Details({ m, status, editable, onStatus }: { m: Milestone; status: Mile
   );
 }
 
-/** A node that opens its milestone details in a popover. */
-function Node({ m, status, editable, onStatus, variant }: { m: Milestone; status: MilestoneStatus; editable: boolean; onStatus: (s: MilestoneStatus) => void; variant: 'main' | 'fix' }) {
-  const look = variant === 'main'
-    ? `w-60 px-4 py-3 text-sm font-semibold ${status === 'done' ? 'bg-emerald-500/15 ring-emerald-400/60' : 'bg-indigo-500/20 ring-indigo-400/60 hover:bg-indigo-500/30'}`
-    : `max-w-56 px-3 py-2 text-xs font-medium ${status === 'done' ? 'bg-emerald-500/10 ring-emerald-400/40' : 'bg-rose-500/10 ring-rose-400/40 hover:bg-rose-500/20'}`;
+function NodeButton({ m, status, editable, onStatus, className, style, children }: {
+  m: Milestone; status: MilestoneStatus; editable: boolean; onStatus: (s: MilestoneStatus) => void; className: string; style: React.CSSProperties; children: React.ReactNode;
+}) {
   return (
-    <Popover className="relative">
-      <PopoverButton className={`relative block rounded-lg text-left text-white ring-1 backdrop-blur focus:outline-none data-focus:outline-2 data-focus:outline-white ${look}`}>
-        {variant === 'fix' && <WrenchScrewdriverIcon aria-hidden className="mr-1 inline size-3.5 text-rose-300" />}
-        {variant === 'main' ? skillName(m.skillId) : (m.concept ? m.title : m.title)}
-        {variant === 'main' && <span className="mt-0.5 block text-xs font-normal text-white/60">{LEVEL_LABELS[m.targetLevel]} · ~{m.effortHours}h</span>}
-        <StatusMark status={status} />
+    <Popover className="absolute" style={style}>
+      <PopoverButton className={`relative flex h-full w-full items-center justify-center rounded-[5px] border-2 border-black px-3 text-center text-black transition hover:brightness-95 focus:outline-none data-focus:outline-2 data-focus:outline-offset-2 data-focus:outline-[#2b78e4] ${className}`} style={FONT}>
+        {children}
+        <CheckBadge status={status} />
       </PopoverButton>
-      <PopoverPanel anchor="bottom" transition
-        className="z-50 w-80 rounded-xl bg-neutral-900/95 p-4 shadow-2xl ring-1 ring-white/15 backdrop-blur-xl [--anchor-gap:8px] transition duration-150 ease-out data-closed:opacity-0">
+      <PopoverPanel anchor="bottom" transition className="z-50 w-80 rounded-xl bg-neutral-900/95 p-4 shadow-2xl ring-1 ring-white/15 backdrop-blur-xl [--anchor-gap:8px] transition duration-150 ease-out data-closed:opacity-0">
         <Details m={m} status={status} editable={editable} onStatus={onStatus} />
       </PopoverPanel>
     </Popover>
   );
 }
 
-function Connector({ side }: { side: 'left' | 'right' }) {
-  return <span aria-hidden className={`hidden h-0 w-8 border-t-2 border-dotted border-indigo-400/50 md:block lg:w-12 ${side === 'left' ? '' : ''}`} />;
-}
-
 export function RoadmapMap({ milestones, progress, roleTitle, editable, onStatus }: {
   milestones: Milestone[]; progress: Record<string, MilestoneProgress>; roleTitle: string; editable: boolean; onStatus: (key: string, s: MilestoneStatus) => void;
 }) {
-  const groups = groupBySkill(milestones);
+  const { blocks, height } = layout(groupBySkill(milestones));
   const st = (m: Milestone): MilestoneStatus => progress[m.key]?.status ?? 'todo';
-
-  const resourceChips = (m: Milestone, align: 'left' | 'right') => m.resourceIds.map((id) => RESOURCE_BY_ID[id]).filter(Boolean).map((r) => (
-    <div key={r.id} className={`flex items-center ${align === 'left' ? 'justify-end' : 'justify-start'}`}>
-      {align === 'right' && <Connector side="right" />}
-      <a href={r.url} target="_blank" rel="noreferrer" className="max-w-56 truncate rounded-lg bg-white/5 px-3 py-2 text-xs text-white/80 ring-1 ring-white/10 hover:bg-white/10 hover:text-white">
-        {r.title} <ArrowTopRightOnSquareIcon aria-hidden className="inline size-3" />
-      </a>
-      {align === 'left' && <Connector side="left" />}
-    </div>
-  ));
-  const fixChips = (g: Group, align: 'left' | 'right') => g.fixes.map((f) => (
-    <div key={f.key} className={`flex items-center ${align === 'left' ? 'justify-end' : 'justify-start'}`}>
-      {align === 'right' && <Connector side="right" />}
-      <Node m={f} status={st(f)} editable={editable} onStatus={(s) => onStatus(f.key, s)} variant="fix" />
-      {align === 'left' && <Connector side="left" />}
-    </div>
-  ));
+  const lastCy = blocks.length ? blocks[blocks.length - 1].cy : TOP;
 
   return (
-    <div className="relative overflow-x-auto rounded-xl bg-white/[0.02] px-4 py-8 ring-1 ring-white/10">
-      <ul className="mb-6 flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs text-white/70" aria-label="Legend">
-        <li className="flex items-center gap-1.5"><span className="size-3 rounded bg-indigo-500/40 ring-1 ring-indigo-400/60" /> Skill milestone</li>
-        <li className="flex items-center gap-1.5"><span className="size-3 rounded bg-rose-500/30 ring-1 ring-rose-400/50" /> Remediation from your assessment</li>
-        <li className="flex items-center gap-1.5"><span className="size-3 rounded bg-white/10 ring-1 ring-white/20" /> Resource</li>
-        <li className="flex items-center gap-1.5"><span className="flex size-3.5 items-center justify-center rounded-full bg-emerald-500"><CheckIcon className="size-2.5 text-black" /></span> Done</li>
-        <li className="flex items-center gap-1.5"><span className="size-3 rounded-full bg-amber-400" /> In progress</li>
-      </ul>
-
-      <div className="relative mx-auto min-w-0 max-w-5xl">
-        <span aria-hidden className="absolute top-0 bottom-0 left-1/2 hidden w-0.5 -translate-x-1/2 bg-linear-to-b from-indigo-400/0 via-indigo-400/60 to-indigo-400/20 md:block" />
-        <div className="relative mb-8 flex flex-col items-center">
-          <span aria-hidden className="h-8 border-l-2 border-dotted border-indigo-400/50" />
-          <h3 className="rounded-full bg-neutral-950 px-5 py-2 text-lg font-bold tracking-tight text-white ring-1 ring-white/15">{roleTitle}</h3>
+    <div className="overflow-x-auto rounded-xl bg-[#fdfdfd] ring-1 ring-white/10">
+      <div className="relative mx-auto" style={{ width: W, height: height + 60, ...FONT }}>
+        {/* Legend, roadmap.sh style */}
+        <div className="absolute top-5 left-5 rounded-md border-2 border-black bg-white px-4 py-3 text-[13px] text-black">
+          <div className="flex items-center gap-2"><span className="flex size-4 items-center justify-center rounded-full bg-[#874efe]"><CheckIcon className="size-3 text-white" /></span> Done</div>
+          <div className="mt-1.5 flex items-center gap-2"><span className="flex size-4 items-center justify-center rounded-full bg-[#f59e0b]"><span className="size-1.5 rounded-full bg-white" /></span> In progress</div>
+          <div className="mt-1.5 flex items-center gap-2"><span className="h-3 w-5 rounded-[3px] border-2 border-black bg-[#ffff00]" /> Skill</div>
+          <div className="mt-1.5 flex items-center gap-2"><span className="h-3 w-5 rounded-[3px] border-2 border-black bg-[#ffe599]" /> Remediation from your assessment</div>
+          <div className="mt-1.5 flex items-center gap-2"><span className="h-3 w-5 rounded-[3px] border-2 border-black bg-[#f1f1f1]" /> Resource (opens in a new tab)</div>
         </div>
-        <ol className="space-y-8">
-          {groups.map((g, i) => {
-            const fixesLeft = i % 2 === 0;
-            return (
-              <li key={g.main.key} className="grid grid-cols-1 items-center gap-3 md:grid-cols-[1fr_auto_1fr] md:gap-0">
-                <div className="order-2 space-y-2 md:order-1">{fixesLeft ? fixChips(g, 'left') : null}{!fixesLeft ? resourceChips(g.main, 'left') : null}</div>
-                <div className="order-1 flex justify-center md:order-2">
-                  <div className="relative bg-neutral-950 rounded-lg"><Node m={g.main} status={st(g.main)} editable={editable} onStatus={(s) => onStatus(g.main.key, s)} variant="main" /></div>
-                </div>
-                <div className="order-3 space-y-2">{fixesLeft ? resourceChips(g.main, 'right') : fixChips(g, 'right')}</div>
-              </li>
-            );
-          })}
+        <div className="absolute top-5 right-5 max-w-56 rounded-md bg-white px-4 py-3 text-[13px] text-black shadow-sm">
+          Click any node for the reason, exercise, resources and status.
+        </div>
+
+        <svg aria-hidden className="pointer-events-none absolute inset-0" width={W} height={height + 60}>
+          {/* dotted lead-in above the title, then the solid spine */}
+          <line x1={CX} y1={0} x2={CX} y2={TOP - 78} stroke={BLUE} strokeWidth={3} strokeDasharray="0.5 7" strokeLinecap="round" />
+          <line x1={CX} y1={TOP - 30} x2={CX} y2={lastCy + 70} stroke={BLUE} strokeWidth={4} />
+          {blocks.map((b) => [
+            ...b.left.map((n, k) => <path key={`l${b.g.main.key}${k}`} d={fan(CX - MAIN_W / 2, b.cy, n.x + SUB_W, n.y + SUB_H / 2)} fill="none" stroke={BLUE} strokeWidth={3} strokeDasharray="0.5 7" strokeLinecap="round" />),
+            ...b.right.map((n, k) => <path key={`r${b.g.main.key}${k}`} d={fan(CX + MAIN_W / 2, b.cy, n.x, n.y + SUB_H / 2)} fill="none" stroke={BLUE} strokeWidth={3} strokeDasharray="0.5 7" strokeLinecap="round" />),
+          ])}
+        </svg>
+
+        <h3 className="absolute text-center text-[28px] font-bold text-black" style={{ left: 0, width: W, top: TOP - 75 }}>{roleTitle}</h3>
+
+        <ol aria-label="Roadmap">
+          {blocks.map((b) => (
+            <li key={b.g.main.key}>
+              <NodeButton m={b.g.main} status={st(b.g.main)} editable={editable} onStatus={(s) => onStatus(b.g.main.key, s)}
+                className="bg-[#ffff00] text-[15px] font-bold" style={{ left: CX - MAIN_W / 2, top: b.mainY, width: MAIN_W, height: MAIN_H }}>
+                {skillName(b.g.main.skillId)}
+              </NodeButton>
+              {[...b.left, ...b.right].map(({ it, x, y }) => it.kind === 'fix' ? (
+                <NodeButton key={it.m.key} m={it.m} status={st(it.m)} editable={editable} onStatus={(s) => onStatus(it.m.key, s)}
+                  className="bg-[#ffe599] text-[13px] leading-tight" style={{ left: x, top: y, width: SUB_W, height: SUB_H }}>
+                  <span className="line-clamp-2">{it.m.title}</span>
+                </NodeButton>
+              ) : (
+                <a key={it.r.id} href={it.r.url} target="_blank" rel="noreferrer" title={`${it.r.title} · ${it.r.provider}`}
+                  className="absolute flex items-center justify-center gap-1.5 rounded-[5px] border-2 border-black bg-[#f1f1f1] px-3 text-center text-[13px] leading-tight text-black hover:brightness-95"
+                  style={{ left: x, top: y, width: SUB_W, height: SUB_H, ...FONT }}>
+                  <span className="truncate">{it.r.title}</span><ArrowTopRightOnSquareIcon aria-hidden className="size-3.5 shrink-0" />
+                </a>
+              ))}
+            </li>
+          ))}
         </ol>
-        <div className="relative mt-8 flex justify-center">
-          <span className="rounded-full bg-emerald-500/15 px-4 py-1.5 text-sm font-semibold text-emerald-300 ring-1 ring-emerald-400/40">Ready for {roleTitle}</span>
+
+        <div className="absolute flex justify-center" style={{ left: 0, width: W, top: lastCy + 70 }}>
+          <span className="rounded-[5px] border-2 border-black bg-[#874efe] px-5 py-2 text-[15px] font-bold text-white">Ready for {roleTitle}</span>
         </div>
       </div>
-      <p className="mt-6 text-center text-xs text-white/60">Click any node for the reason, exercise, resources and status.</p>
     </div>
   );
 }

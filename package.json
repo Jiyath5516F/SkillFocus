@@ -13,7 +13,9 @@
     "build": "vite build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "NODE_ENV=production tsx server/index.ts",
-    "acceptance": "tsx scripts/acceptance.ts"
+    "acceptance": "tsx scripts/acceptance.ts",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "check": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

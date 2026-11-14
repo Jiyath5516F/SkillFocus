@@ -130,7 +130,7 @@ export const RESOURCES: Resource[] = [
 
   { id: 'google-mlcc', skillId: 'ml', title: 'Machine Learning Crash Course', provider: 'Google', url: 'https://developers.google.com/machine-learning/crash-course', kind: 'course', hours: 15 },
   { id: 'kaggle-intro-ml', skillId: 'ml', title: 'Intro to Machine Learning', provider: 'Kaggle Learn', url: 'https://www.kaggle.com/learn/intro-to-machine-learning', kind: 'course', hours: 3 },
-  { id: 'sklearn-tutorial', skillId: 'ml', title: 'scikit-learn tutorials', provider: 'scikit-learn', url: 'https://scikit-learn.org/stable/tutorial/index.html', kind: 'docs', hours: 6 },
+  { id: 'sklearn-tutorial', skillId: 'ml', title: 'Getting started with scikit-learn', provider: 'scikit-learn', url: 'https://scikit-learn.org/stable/getting_started.html', kind: 'docs', hours: 6 },
 
   { id: 'fastai', skillId: 'deep_learning', title: 'Practical Deep Learning for Coders', provider: 'fast.ai', url: 'https://course.fast.ai/', kind: 'course', hours: 30 },
   { id: 'pytorch-tutorials', skillId: 'deep_learning', title: 'PyTorch tutorials', provider: 'pytorch.org', url: 'https://pytorch.org/tutorials/', kind: 'docs', hours: 10 },

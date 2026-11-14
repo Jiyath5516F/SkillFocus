@@ -50,12 +50,12 @@ export function Twin() {
           </div>
         </Card>
         <Card className="lg:col-span-2" title="Skill shape" subtitle="Required vs. effective (evidence-weighted) vs. self-reported level">
-          <div className="h-72">
+          <div className="h-80">
             <ResponsiveContainer>
-              <RadarChart data={radar} outerRadius="72%">
+              <RadarChart data={radar} outerRadius="78%">
                 <PolarGrid stroke="#e7e5e4" />
                 <PolarAngleAxis dataKey="skill" tick={{ fontSize: 11, fill: '#475569' }} />
-                <PolarRadiusAxis domain={[0, 4]} tickCount={5} tick={{ fontSize: 9, fill: '#94a3b8' }} />
+                <PolarRadiusAxis domain={[0, 4]} tickCount={5} tick={false} axisLine={false} />
                 <Radar name="Required" dataKey="Required" stroke="#334155" fill="#334155" fillOpacity={0.06} strokeDasharray="4 3" />
                 <Radar name="Self-reported" dataKey="Self-reported" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.08} />
                 <Radar name="Effective" dataKey="Effective" stroke="#0f766e" fill="#0f766e" fillOpacity={0.3} />

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { AgentRun, AppState } from '../../shared/types';
 import { api, type Meta } from './api';
 import { AgentDrawer } from './components/AgentDrawer';
@@ -8,7 +8,9 @@ import { Mentor } from './views/Mentor';
 import { Overview } from './views/Overview';
 import { ProfileView } from './views/Profile';
 import { Roadmap } from './views/Roadmap';
-import { Twin } from './views/Twin';
+
+// Career Twin pulls in the charting library, so it is loaded on demand to keep the first load small.
+const Twin = lazy(() => import('./views/Twin').then((m) => ({ default: m.Twin })));
 
 export type View = 'overview' | 'twin' | 'roadmap' | 'assessments' | 'mentor' | 'profile';
 const VIEWS: { id: View; label: string }[] = [
@@ -117,6 +119,7 @@ export default function App() {
 
   return (
     <AppCtx.Provider value={ctx}>
+      <a href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }} className="sr-only z-50 rounded bg-white px-3 py-2 text-sm text-brand-800 shadow focus:not-sr-only focus:fixed focus:top-2 focus:left-2">Skip to content</a>
       <div className="min-h-screen lg:flex">
         <aside className="border-b border-stone-200 bg-white lg:fixed lg:inset-y-0 lg:w-60 lg:border-r lg:border-b-0">
           <div className="flex items-center justify-between px-5 py-4 lg:block">
@@ -168,9 +171,9 @@ export default function App() {
             </div>
           )}
 
-          <main className="mx-auto max-w-6xl px-4 py-6 sm:px-8">
+          <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 focus:outline-none sm:px-8">
             {view === 'overview' && <Overview />}
-            {view === 'twin' && <Twin />}
+            {view === 'twin' && <Suspense fallback={<div className="flex items-center gap-2 text-slate-500"><Spinner /> Loading Career Twin…</div>}><Twin /></Suspense>}
             {view === 'roadmap' && <Roadmap />}
             {view === 'assessments' && <Assessments />}
             {view === 'mentor' && <Mentor />}

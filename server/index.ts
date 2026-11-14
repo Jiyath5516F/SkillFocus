@@ -5,11 +5,11 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z } from 'zod';
 import { ROLES, ROLE_BY_ID, RESOURCES, SKILLS, SKILL_BY_ID } from '../shared/catalog';
-import { scoreToLevel } from '../shared/engine';
-import type { ConceptResult, MilestoneStatus, QuestionResult } from '../shared/types';
+import type { MilestoneStatus } from '../shared/types';
 import { mentorReply } from './agents/mentor';
 import { ASSESSMENTS, ASSESSMENT_BY_ID, toPublic } from './assessments';
 import * as store from './db';
+import { countAnswered, grade } from './grading';
 import { aiConfigured, describeError, MODEL } from './llm';
 import { BusyError, startAnalyze, startAssessmentRun, startGoalChange } from './orchestrator';
 import { seedDemo } from './seed';
@@ -24,15 +24,27 @@ seedDemo();
 
 const app = express();
 app.disable('x-powered-by');
+app.set('trust proxy', 'loopback');
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+  next();
+});
 app.use(express.json({ limit: '100kb' }));
 
-// Simple in-memory limiter for AI-triggering endpoints.
-const hits: number[] = [];
-function aiLimit(_req: Request, res: Response, next: NextFunction) {
+// Per-client in-memory limiter for AI-triggering endpoints (single-instance deployment).
+const AI_LIMIT_PER_MIN = Number(process.env.MIRA_AI_LIMIT_PER_MIN || 30);
+const hits = new Map<string, number[]>();
+function aiLimit(req: Request, res: Response, next: NextFunction) {
   const t = Date.now();
-  while (hits.length && t - hits[0] > 60_000) hits.shift();
-  if (hits.length >= 30) return res.status(429).json({ error: 'Too many AI requests. Please wait a minute.' });
-  hits.push(t);
+  const key = req.ip ?? 'unknown';
+  const recent = (hits.get(key) ?? []).filter((x) => t - x < 60_000);
+  if (recent.length >= AI_LIMIT_PER_MIN) return res.status(429).json({ error: 'Too many AI requests. Please wait a minute.' });
+  recent.push(t);
+  hits.set(key, recent);
   next();
 }
 
@@ -105,28 +117,16 @@ api.post('/assessments/:id/submit', aiLimit, (req, res) => {
   const body = z.object({ answers: z.record(z.string(), z.number().int().min(0).max(9).nullable()) }).safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: 'Invalid submission' });
   const answers = body.data.answers;
-  const answered = def.questions.filter((q) => typeof answers[q.id] === 'number').length;
+  const answered = countAnswered(def, answers);
   if (answered < def.questions.length) return res.status(400).json({ error: `Please answer all ${def.questions.length} questions (${answered} answered).` });
   if (store.activeRunId()) return res.status(409).json({ error: 'Agents are busy with a previous request. Please wait a moment.' });
 
-  // Deterministic grading against the answer key.
   const t0 = Date.now();
-  const questionResults: QuestionResult[] = def.questions.map((q) => {
-    const chosen = answers[q.id] ?? null;
-    return { questionId: q.id, concept: q.concept, chosen, correctIndex: q.answer, correct: chosen === q.answer, explanation: q.explanation };
-  });
-  const correct = questionResults.filter((r) => r.correct).length;
-  const score = Math.round((correct / def.questions.length) * 100);
-  const conceptResults: ConceptResult[] = Object.entries(def.concepts).map(([concept, label]) => {
-    const qs = questionResults.filter((r) => r.concept === concept);
-    return { concept, label, correct: qs.filter((r) => r.correct).length, total: qs.length };
-  }).filter((c) => c.total > 0);
-  const weakConcepts = conceptResults.filter((c) => c.correct / c.total < 0.5).map((c) => c.concept);
-  const verifiedLevel = scoreToLevel(score);
+  const g = grade(def, answers); // deterministic, against the answer key
   const profile = store.getProfile()!;
   const requiredLevel = ROLE_BY_ID[profile.targetRoleId].requirements.find((r) => r.skillId === def.skillId)?.level ?? 2;
-  const attempt = store.addAttempt({ assessmentId: def.id, skillId: def.skillId, score, correct, total: def.questions.length, verifiedLevel, conceptResults, questionResults, weakConcepts, diagnosis: null, createdAt: store.now() });
-  store.addEvidence({ skillId: def.skillId, source: 'assessment', level: verifiedLevel, detail: `${def.title} attempt #${attempt.id}: ${score}%`, refId: `attempt:${attempt.id}` });
+  const attempt = store.addAttempt({ assessmentId: def.id, skillId: def.skillId, ...g, diagnosis: null, createdAt: store.now() });
+  store.addEvidence({ skillId: def.skillId, source: 'assessment', level: g.verifiedLevel, detail: `${def.title} attempt #${attempt.id}: ${g.score}%`, refId: `attempt:${attempt.id}` });
   const gradingMs = Date.now() - t0;
   try {
     res.json({ attempt, runId: startAssessmentRun(def, attempt, gradingMs, requiredLevel) });

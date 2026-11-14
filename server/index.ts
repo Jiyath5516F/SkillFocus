@@ -1,4 +1,5 @@
 // Mira API server (Express). Serves /api and, in production, the built client — optionally under a base path (e.g. /Mira).
+import './env';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';

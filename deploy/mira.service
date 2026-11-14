@@ -1,0 +1,21 @@
+[Unit]
+Description=Mira (SkillFocus) career learning API
+After=network.target
+
+[Service]
+Type=simple
+User=mira
+Group=mira
+WorkingDirectory=/opt/mira
+EnvironmentFile=/opt/mira/.env
+ExecStart=/usr/bin/env node --import tsx server/index.ts
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/mira
+
+[Install]
+WantedBy=multi-user.target

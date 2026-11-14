@@ -1,0 +1,9 @@
+# Alternative to nginx: Caddy with automatic HTTPS once a domain points at the server.
+# mira.example.com {
+#     reverse_proxy 127.0.0.1:8090
+# }
+:80 {
+    handle /Mira* {
+        reverse_proxy 127.0.0.1:8090
+    }
+}

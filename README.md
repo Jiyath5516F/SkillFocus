@@ -90,9 +90,9 @@ Each agent is a separate model call with its own instructions and typed, schema-
 
 | Trigger | Agents in order |
 |---|---|
-| Analyze / profile saved | Skill Intelligence → engine → **(Career Matching ‖ Path Architect, in parallel)** → new revision → Mira summary |
-| Assessment submitted | deterministic grading → **(Assessment & Progress ‖ Skill Intelligence re-assessment)** → engine → (Matching ‖ Path Architect) → revision v+1 → Mira summary |
-| Goal changed | history kept → engine → (Matching ‖ Path Architect) → revision for the new role → Mira summary |
+| Analyze / profile saved | Skill Intelligence → engine + ranked role match → **Career Matching** (decides the critical path) → **Path Architect** (fills the ordered slots) → new revision → Mira summary |
+| Assessment submitted | deterministic grading → **(Assessment & Progress ‖ Skill Intelligence re-assessment)** → engine → Career Matching → Path Architect → revision v+1 → Mira summary |
+| Goal changed | history kept → engine → Career Matching → Path Architect → revision for the new role → Mira summary |
 
 The **Agent activity** drawer shows each run as it executes: agent, status, timestamp, duration, model, tokens, input and output summaries, and errors. LLM calls, deterministic steps and rule-based fallbacks are labelled differently.
 
@@ -114,6 +114,7 @@ The **Agent activity** drawer shows each run as it executes: agent, status, time
 - Skills use a 0–4 scale (None, Basic, Working, Proficient, Advanced).
 - Score bands map to levels: <40% → not yet demonstrated (0), 40–59% → Basic, 60–79% → Working, 80–89% → Proficient, ≥90% → Advanced, so a failed quiz can lower an unverified estimate but never raise readiness. Any concept scored below 50% is "weak". After an attempt the learner sees an answer review, so retakes of the same assessment have a cooldown (`MIRA_RETAKE_COOLDOWN_MIN`, default 10 minutes), and a new attempt resets that skill's remediation progress.
 - Assessments are short multiple-choice checks (JavaScript: 8 questions; SQL: 5; Python: 6) graded deterministically. No free-text AI grading.
+- Quiz options are shuffled on every attempt and correct answers are spread evenly across positions, so no fixed answering pattern can earn a verified level.
 - The resources are a curated set of 48 well-known free resources. Links were checked when the catalog was built; a few sites block automated checks.
 
 ## Run it locally
@@ -140,7 +141,7 @@ Production: `npm run build && npm start`, which serves the built client and the 
 ## Testing
 
 ```bash
-npm test             # 41 unit + API tests: engine, grading, roadmap assembly, AI-output validation,
+npm test             # 54 unit + API tests: engine, grading, roadmap assembly, AI-output validation,
                      # a fake-model test of the AI path, authentication, account isolation, input validation, security headers, cohort analytics,
                      # and the no-AI rule-based fallback
 npm run acceptance   # 3 end-to-end acceptance tests against a running server (real agent runs)
@@ -173,7 +174,7 @@ The acceptance tests cover the three required scenarios:
 
 ## Efficiency
 
-- Matching and Path Architect run **in parallel**. Only the agents an event needs are invoked, with no agent loops, and effort is set to `low`.
+- Career Matching runs before the Path Architect because its critical path decides the roadmap order; the assessment flow runs Assessment ‖ Skill Intelligence **in parallel**. Only the agents an event needs are invoked, with no agent loops, and effort is set to `low`.
 - Agents receive compact JSON summaries, never the full history.
 - Run history loads in two queries (runs, then all their steps), with indexes on the hot lookups.
 - Agent runs are asynchronous: the API returns a `runId` immediately and the UI polls one small endpoint.

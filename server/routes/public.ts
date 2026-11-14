@@ -9,8 +9,11 @@ import {
   deleteSession,
   findUserByEmail,
   readSessionCookie,
+  loginPerAccount,
+  loginPerIp,
+  normalizeEmail,
   setSessionCookie,
-  tooManyAttempts,
+  signupPerIp,
   userForSession,
   type User,
 } from '../auth';
@@ -37,32 +40,27 @@ const SignupSchema = z.object({
 const LoginSchema = z.object({ email: z.string().trim().min(1).max(254), password: z.string().min(1).max(128) });
 const publicUser = (u: User) => ({ id: u.id, name: u.name, email: u.email });
 
-publicRouter.post('/auth/signup', (req, res) => {
+publicRouter.post('/auth/signup', async (req, res) => {
   const parsed = SignupSchema.safeParse(req.body);
   if (!parsed.success)
     return res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Invalid sign-up details' });
-  // Generous per IP: judges may share one venue network.
-  if (tooManyAttempts([`signup:${req.ip}`], 40, 60 * 60_000))
+  if (signupPerIp.hit(req.ip ?? 'unknown'))
     return res.status(429).json({ error: 'Too many sign-ups from this network. Try again later.' });
   if (findUserByEmail(parsed.data.email))
     return res.status(409).json({ error: 'An account with this email already exists. Sign in instead.' });
-  const user = createUser(parsed.data.name, parsed.data.email, parsed.data.password);
+  const user = await createUser(parsed.data.name, parsed.data.email, parsed.data.password);
   store.runAsUser(user.id, () => seedNewAccount(user.name)); // empty profile; the setup wizard collects the details
   setSessionCookie(req, res, createSession(user.id), BASE);
   res.status(201).json({ user: publicUser(user) });
 });
 
-publicRouter.post('/auth/login', (req, res) => {
+publicRouter.post('/auth/login', async (req, res) => {
   const parsed = LoginSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Enter your email and password' });
-  // Strict per account (stops password guessing), generous per IP (shared venue networks).
-  if (
-    tooManyAttempts([`login-email:${parsed.data.email.toLowerCase()}`], 10) ||
-    tooManyAttempts([`login-ip:${req.ip}`], 100)
-  ) {
+  if (loginPerAccount.hit(normalizeEmail(parsed.data.email)) || loginPerIp.hit(req.ip ?? 'unknown')) {
     return res.status(429).json({ error: 'Too many sign-in attempts. Please wait 15 minutes.' });
   }
-  const user = authenticate(parsed.data.email, parsed.data.password);
+  const user = await authenticate(parsed.data.email, parsed.data.password);
   if (!user) return res.status(401).json({ error: 'Incorrect email or password' }); // generic: no account enumeration
   setSessionCookie(req, res, createSession(user.id), BASE);
   res.json({ user: publicUser(user) });

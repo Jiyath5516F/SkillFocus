@@ -4,21 +4,15 @@ import { readSessionCookie, userForSession } from './auth';
 import * as store from './db';
 import { describeError } from './llm';
 import { BusyError } from './orchestrator';
+import { RateLimiter } from './rateLimit';
 
 export const BASE = (process.env.MIRA_BASE_PATH || '').replace(/\/+$/, '');
 
-// Per-client in-memory limiter for AI-triggering endpoints (single-instance deployment).
-const AI_LIMIT_PER_MIN = Number(process.env.MIRA_AI_LIMIT_PER_MIN || 30);
-const hits = new Map<string, number[]>();
+// Per-client limiter for AI-triggering endpoints.
+const aiPerIp = new RateLimiter(Number(process.env.MIRA_AI_LIMIT_PER_MIN || 30), 60_000);
 export function aiLimit(req: Request, res: Response, next: NextFunction) {
-  const t = Date.now();
-  if (hits.size > 5_000) hits.clear(); // bound memory under abuse
-  const key = req.ip ?? 'unknown';
-  const recent = (hits.get(key) ?? []).filter((x) => t - x < 60_000);
-  if (recent.length >= AI_LIMIT_PER_MIN)
+  if (aiPerIp.hit(req.ip ?? 'unknown'))
     return res.status(429).json({ error: 'Too many AI requests. Please wait a minute.' });
-  recent.push(t);
-  hits.set(key, recent);
   next();
 }
 

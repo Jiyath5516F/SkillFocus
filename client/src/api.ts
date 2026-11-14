@@ -27,12 +27,11 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const body = await res.json().catch(() => ({}));
   // An expired or missing session anywhere in the app sends the user back to the sign-in page.
   if (res.status === 401 && !path.startsWith('/auth/')) window.dispatchEvent(new Event('mira:signed-out'));
-  if (!res.ok)
-    throw new ApiError(
-      (body as { error?: string; details?: string[] }).error +
-        ((body as { details?: string[] }).details ? `: ${(body as { details: string[] }).details.join('; ')}` : '') ||
-        `Request failed (${res.status})`,
-    );
+  if (!res.ok) {
+    const { error, details } = body as { error?: string; details?: string[] };
+    const message = error ? (details?.length ? `${error}: ${details.join('; ')}` : error) : null;
+    throw new ApiError(message ?? `Request failed (${res.status})`);
+  }
   return body as T;
 }
 

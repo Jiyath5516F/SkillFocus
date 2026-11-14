@@ -1,9 +1,10 @@
 // Accounts and sessions. Passwords: scrypt with a per-user random salt, verified in constant time.
 // Sessions: 256-bit random tokens in an HttpOnly cookie; only their SHA-256 hash is stored server-side.
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, scrypt, timingSafeEqual, type ScryptOptions } from 'node:crypto';
 import { join } from 'node:path';
 import type { Request, Response } from 'express';
 import { DATA_DIR, IN_MEMORY, openDatabase } from './db';
+import { RateLimiter } from './rateLimit';
 
 export interface User {
   id: number;
@@ -31,17 +32,23 @@ const toUser = (r: Row): User => ({
   createdAt: r.created_at as string,
 });
 
-export function hashPassword(password: string): string {
+/** scrypt on libuv's thread pool, so hashing never blocks the event loop. */
+const deriveKey = (password: string, salt: Buffer, keyLen: number, options: ScryptOptions) =>
+  new Promise<Buffer>((resolve, reject) =>
+    scrypt(password, salt, keyLen, options, (err, key) => (err ? reject(err) : resolve(key))),
+  );
+
+export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16);
-  const key = scryptSync(password, salt, SCRYPT.keyLen, { N: SCRYPT.N, r: SCRYPT.r, p: SCRYPT.p });
+  const key = await deriveKey(password, salt, SCRYPT.keyLen, { N: SCRYPT.N, r: SCRYPT.r, p: SCRYPT.p });
   return `scrypt$${SCRYPT.N}$${SCRYPT.r}$${SCRYPT.p}$${salt.toString('base64')}$${key.toString('base64')}`;
 }
 
-export function verifyPassword(password: string, stored: string): boolean {
+export async function verifyPassword(password: string, stored: string): Promise<boolean> {
   const [alg, n, r, p, saltB64, keyB64] = stored.split('$');
   if (alg !== 'scrypt' || !saltB64 || !keyB64) return false;
   const expected = Buffer.from(keyB64, 'base64');
-  const actual = scryptSync(password, Buffer.from(saltB64, 'base64'), expected.length, {
+  const actual = await deriveKey(password, Buffer.from(saltB64, 'base64'), expected.length, {
     N: Number(n),
     r: Number(r),
     p: Number(p),
@@ -50,7 +57,8 @@ export function verifyPassword(password: string, stored: string): boolean {
 }
 
 // Used when the email is unknown so a failed login takes the same time either way (no account enumeration by timing).
-const DUMMY_HASH = hashPassword(randomBytes(12).toString('hex'));
+let dummyHash: Promise<string> | undefined;
+const getDummyHash = () => (dummyHash ??= hashPassword(randomBytes(12).toString('hex')));
 
 export const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
@@ -59,10 +67,11 @@ export function findUserByEmail(email: string): (User & { passwordHash: string }
   return r ? { ...toUser(r), passwordHash: r.password_hash as string } : null;
 }
 
-export function createUser(name: string, email: string, password: string): User {
+export async function createUser(name: string, email: string, password: string): Promise<User> {
+  const passwordHash = await hashPassword(password);
   const res = authDb
     .prepare('INSERT INTO user (email, name, password_hash, created_at) VALUES (?, ?, ?, ?)')
-    .run(normalizeEmail(email), name.trim(), hashPassword(password), new Date().toISOString());
+    .run(normalizeEmail(email), name.trim(), passwordHash, new Date().toISOString());
   return {
     id: Number(res.lastInsertRowid),
     email: normalizeEmail(email),
@@ -72,9 +81,9 @@ export function createUser(name: string, email: string, password: string): User 
 }
 
 /** Returns the user when the password matches; always spends one scrypt computation. */
-export function authenticate(email: string, password: string): User | null {
+export async function authenticate(email: string, password: string): Promise<User | null> {
   const u = findUserByEmail(email);
-  const ok = verifyPassword(password, u?.passwordHash ?? DUMMY_HASH);
+  const ok = await verifyPassword(password, u?.passwordHash ?? (await getDummyHash()));
   return u && ok ? { id: u.id, email: u.email, name: u.name, createdAt: u.createdAt } : null;
 }
 
@@ -124,17 +133,7 @@ export function clearSessionCookie(res: Response, basePath: string) {
   res.clearCookie(SESSION_COOKIE, { httpOnly: true, sameSite: 'strict', path: basePath || '/' });
 }
 
-/** Sliding-window limiter keyed by IP and by email, for sign-in and sign-up attempts. */
-const attempts = new Map<string, number[]>();
-export function tooManyAttempts(keys: string[], limit = 10, windowMs = 15 * 60_000): boolean {
-  const t = Date.now();
-  if (attempts.size > 10_000) attempts.clear();
-  let blocked = false;
-  for (const k of keys) {
-    const recent = (attempts.get(k) ?? []).filter((x) => t - x < windowMs);
-    if (recent.length >= limit) blocked = true;
-    recent.push(t);
-    attempts.set(k, recent);
-  }
-  return blocked;
-}
+// Sign-in: strict per account (stops password guessing), generous per IP (judges may share one venue network).
+export const loginPerAccount = new RateLimiter(10, 15 * 60_000);
+export const loginPerIp = new RateLimiter(100, 15 * 60_000);
+export const signupPerIp = new RateLimiter(40, 60 * 60_000);

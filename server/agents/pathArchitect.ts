@@ -23,14 +23,16 @@ For EVERY slot, write one milestone with the same "key":
 - effortHours: realistic hours, considering the learner's weekly study hours.
 For remediation slots, target the specific misconception described in the assessment diagnosis.
 changeSummary: 1–2 sentences describing what this roadmap version changes and why (mention the trigger).
+Use the Skill Intelligence findings to personalise reasons and exercises (build on strengths, address weaknesses).
 Never invent resources, URLs, completed courses or scores.`;
 
-export async function runPathArchitect(profile: Profile, twin: TwinResult, slots: Slot[], context: { trigger: string; diagnosis?: string | null; previousKeys?: string[] }): Promise<LLMResult<PathOutput>> {
+export async function runPathArchitect(profile: Profile, twin: TwinResult, slots: Slot[], context: { trigger: string; diagnosis?: string | null; previousKeys?: string[]; insights?: unknown }): Promise<LLMResult<PathOutput>> {
   const input = {
     targetRole: ROLE_BY_ID[twin.roleId].title,
     learner: { background: profile.background, interests: profile.interests, weeklyHours: profile.weeklyHours, projects: profile.projects.map((p) => p.name), strengths: twin.strengths.map(skillName) },
     trigger: context.trigger,
     assessmentDiagnosis: context.diagnosis ?? null,
+    skillIntelligence: context.insights ?? null,
     previousRoadmapKeys: context.previousKeys ?? [],
     slots: slots.map((s) => ({
       key: s.key, skill: skillName(s.skillId), kind: s.kind, concept: s.conceptLabel ?? null, targetLevel: LEVEL_LABELS[s.targetLevel], priority: s.priority,

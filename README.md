@@ -1,4 +1,4 @@
-# Mira — evidence-based career learning, built by a team of AI agents
+# SkillFocus — Mira: evidence-based career learning, built by a team of AI agents
 
 > *Mira sees what you really know — and aims you where you want to go.*
 > Repository: **SkillFocus** · Built for **PromptWars × Rathinam Technical Campus**

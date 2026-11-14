@@ -18,9 +18,10 @@ Rules:
 - headline: one sentence on where the learner stands for this role.
 - criticalPath: ordered skillIds (only from the provided gap list) that unlock the most progress, respecting prerequisites.
 - notes: for each gap skill, one sentence on why it matters for this role and how it connects to the learner's existing skills or interests.
-- The readiness value is an estimate, never a hiring probability.`;
+- The readiness value is an estimate, never a hiring probability.
+- Use the Skill Intelligence findings (strengths, weaknesses, uncertainties) to explain priorities.`;
 
-export async function runCareerMatching(profile: Profile, twin: TwinResult): Promise<LLMResult<MatchingOutput>> {
+export async function runCareerMatching(profile: Profile, twin: TwinResult, insights: unknown = null): Promise<LLMResult<MatchingOutput>> {
   const role = ROLE_BY_ID[twin.roleId];
   const input = {
     role: { title: role.title, summary: role.summary },
@@ -28,6 +29,7 @@ export async function runCareerMatching(profile: Profile, twin: TwinResult): Pro
     readinessEstimate: twin.readiness,
     requirements: twin.requirements.map((r) => ({ skillId: r.skillId, skill: skillName(r.skillId), required: r.required, effective: r.effective, status: r.status, impactPoints: r.impact, confidence: r.confidence })),
     gapsInPrerequisiteOrder: twin.orderedGaps,
+    skillIntelligence: insights, // strengths / weaknesses / uncertainties from the Skill Intelligence Agent
   };
   return structured({ system: SYSTEM, user: JSON.stringify(input), schema: Schema });
 }

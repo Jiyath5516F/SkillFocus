@@ -184,7 +184,7 @@ export function listRuns(limit = 15): AgentRun[] {
 }
 export function activeRunId(): number | null {
   // Mentor chats run independently and must not block orchestrated runs.
-  const r = cur().prepare("SELECT id FROM agent_run WHERE status = 'running' AND trigger != 'mentor_question' ORDER BY id DESC LIMIT 1").get() as Row | undefined;
+  const r = cur().prepare("SELECT id FROM agent_run WHERE status = 'running' AND trigger NOT IN ('mentor_question', 'role_design') ORDER BY id DESC LIMIT 1").get() as Row | undefined;
   return r ? (r.id as number) : null;
 }
 

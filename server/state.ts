@@ -9,6 +9,7 @@ export function buildState(): AppState {
   const profile = store.getProfile();
   if (!profile) throw new Error('No learner profile');
   const evidence = store.listEvidence();
+  if (!ROLE_BY_ID[profile.targetRoleId]) profile.targetRoleId = 'fullstack'; // e.g. a custom aim that no longer exists
   const twin = computeTwin(profile, evidence, profile.targetRoleId);
   const revisions = store.listRevisions();
   return {

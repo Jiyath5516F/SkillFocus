@@ -213,7 +213,7 @@ api.post('/roles', (req, res) => {
     id: `custom-${userId}-${Date.now().toString(36)}`, title: designed.title, summary: designed.summary,
     requirements: designed.requirements.map((q) => ({ skillId: q.skillId ?? customSkill(userId, q.name!).id, level: q.level, weight: q.weight })),
   };
-  store.saveProfile({ ...profile, customSkills: customSkills.slice(-40), customRoles: [role, ...(profile.customRoles ?? [])].slice(0, 6) });
+  store.saveProfile({ ...profile, customSkills: customSkills.slice(-40), customRoles: [role, ...(profile.customRoles ?? [])].filter((r, i) => i < 6 || r.id === profile.targetRoleId) });
   registerRoles([role]);
   res.status(201).json({ role, skills: customSkills });
 });

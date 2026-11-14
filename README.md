@@ -5,7 +5,7 @@
 
 Mira is an AI-powered learning platform that works out a learner's **real** skill level, compares it with a target career, and builds a personalised roadmap. **Five specialised AI agents** collaborate on that roadmap, and it **adapts automatically** when the learner fails an assessment or changes their goal.
 
-![Career Twin after a failed JavaScript assessment: readiness 28.8% → 15.3%, remediation inserted](docs/screenshots/twin.jpg)
+![Career Twin: evidence-based readiness estimate, Proof meter and skill shape](docs/screenshots/twin.jpg)
 
 | Overview | Agent activity (real runs) |
 |---|---|

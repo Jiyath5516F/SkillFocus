@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { LEVEL_LABELS } from '../../../shared/catalog';
-import type { Confidence } from '../../../shared/types';
+import { proofBreakdown } from '../../../shared/engine';
+import type { Confidence, RequirementResult } from '../../../shared/types';
 
 export function Card({ children, className = '', title, action, subtitle }: { children: ReactNode; className?: string; title?: ReactNode; action?: ReactNode; subtitle?: ReactNode }) {
   return (
@@ -108,21 +109,10 @@ export function Delta({ from, to, suffix = '' }: { from: number; to: number; suf
 export const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 export const fmtDate = (iso: string) => new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-/**
- * Proof meter: splits the readiness estimate by how well each contribution is proven.
- * Points per requirement = weight × min(effective / required, 1) ÷ Σ weight × 100 (same formula as readiness).
- */
-export function ProofMeter({ requirements }: { requirements: { weight: number; effective: number; required: number; confidence: Confidence }[] }) {
-  const totalW = requirements.reduce((s, r) => s + r.weight, 0) || 1;
-  const pts = { assessed: 0, evidence: 0, unverified: 0 };
-  for (const r of requirements) {
-    const p = (r.weight * Math.min(r.effective / r.required, 1)) / totalW * 100;
-    if (r.confidence === 'assessed') pts.assessed += p;
-    else if (r.confidence === 'evidence') pts.evidence += p;
-    else pts.unverified += p;
-  }
-  const total = pts.assessed + pts.evidence + pts.unverified;
-  const proven = total ? Math.round(((pts.assessed + pts.evidence) / total) * 100) : 0;
+/** Proof meter: the readiness estimate split into assessed, evidence-backed and unverified points. */
+export function ProofMeter({ requirements }: { requirements: RequirementResult[] }) {
+  const pts = proofBreakdown(requirements);
+  const proven = pts.provenShare;
   const seg = [
     { key: 'assessed', label: 'Assessed', value: pts.assessed, cls: 'bg-emerald-600' },
     { key: 'evidence', label: 'Evidence-backed', value: pts.evidence, cls: 'bg-ink' },
@@ -134,7 +124,7 @@ export function ProofMeter({ requirements }: { requirements: { weight: number; e
         <div className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Proof meter</div>
         <div className="text-sm text-slate-700"><span className="font-display text-lg font-medium text-ink">{proven}%</span> of your readiness is backed by evidence</div>
       </div>
-      <div className="flex h-3 w-full overflow-hidden rounded-full bg-paper-deep" role="img" aria-label={`Readiness ${Math.round(total * 10) / 10}%: ${seg.map((s) => `${s.label} ${Math.round(s.value * 10) / 10} points`).join(', ')}`}>
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-paper-deep" role="img" aria-label={`Readiness ${Math.round(pts.total * 10) / 10}%: ${seg.map((s) => `${s.label} ${Math.round(s.value * 10) / 10} points`).join(', ')}`}>
         {seg.map((s) => s.value > 0 && <div key={s.key} className={s.cls} style={{ width: `${s.value}%` }} title={`${s.label}: ${Math.round(s.value * 10) / 10} pts`} />)}
       </div>
       <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-600">

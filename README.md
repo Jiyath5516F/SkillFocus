@@ -24,6 +24,7 @@ Traditional platforms hand everyone the same courses and never check whether a s
 | Learning recommendations | **Learning Path Architect** writes milestones with reasons, practical exercises and effort, choosing resources **only from a curated catalog of real, free resources** |
 | Progress tracking | Milestone status, assessment attempts, skill-estimate changes, readiness history, and every roadmap revision kept with a diff |
 | AI mentor | **Mira** answers from a grounded snapshot of the learner's real data and explains why the roadmap changed |
+| Organisation view (problem statement: *"organizations and universities find it difficult to identify what skills … lack"*) | **Cohort insights** aggregate evidence-based gaps across learners: training priorities ranked by total readiness impact, how many gaps are assessment-verified vs. unverified claims, and a suggested action per skill (workshop, assess first, or targeted mentoring) |
 | Adaptive multi-agent behaviour | A failed assessment or a goal change triggers a new agent run and a **new roadmap version**, with a visible before/after |
 
 ## The differentiator: Career Twin
@@ -89,6 +90,10 @@ The **Agent activity** drawer shows each run as it executes: agent, status, time
 3. **Graceful degradation.** If the model is unavailable, the step is logged as *failed*, the deterministic engine and rule-based templates keep the app usable, and the UI says so. Fallback output is never shown as an AI result.
 4. **History is append-only.** Roadmap revisions and assessment attempts are never overwritten, so goal changes and adaptations stay auditable.
 
+## Cohort insights (universities & employers)
+
+`GET /api/cohort?role=all|<roleId>` runs the same deterministic engine over a group of learners. It returns average readiness, the average share of readiness that is proven, and **training priorities**: for each skill, how many learners have the gap, how many gaps are verified by an assessment versus resting on unverified claims, and the readiness points the cohort would gain. The demo uses an **illustrative sample cohort of 12 learners (not real people)** plus the live learner, and the UI labels it that way.
+
 ## Assumptions
 
 - A single-learner prototype with no authentication. A preloaded demo learner and a reset button keep the demo reproducible.
@@ -121,8 +126,8 @@ Production: `npm run build && npm start`, which serves the built client and the 
 ## Testing
 
 ```bash
-npm test             # 27 unit + API tests: engine, grading, roadmap assembly, AI-output validation,
-                     # input validation, security headers, and the no-AI rule-based fallback
+npm test             # 30 unit + API tests: engine, grading, roadmap assembly, AI-output validation,
+                     # input validation, security headers, cohort analytics, and the no-AI rule-based fallback
 npm run acceptance   # 3 end-to-end acceptance tests against a running server (real agent runs)
 npm run check        # typecheck + unit tests + production build
 ```

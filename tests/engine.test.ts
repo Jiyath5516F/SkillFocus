@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { computeTwin, diffMilestones, estimateSkill, orderByPrereqs, scoreToLevel } from '../shared/engine';
+import { computeTwin, diffMilestones, estimateSkill, orderByPrereqs, proofBreakdown, scoreToLevel } from '../shared/engine';
 import type { Evidence, Profile, RoadmapRevision } from '../shared/types';
 
 const profile: Profile = {
@@ -83,5 +83,15 @@ describe('diffMilestones', () => {
     assert.deepEqual(d.removed, []);
     assert.ok(d.moved.length > 0);
     assert.equal(diffMilestones(null, ['a']), null);
+  });
+});
+
+describe('proofBreakdown', () => {
+  it('splits readiness points by confidence and sums to readiness', () => {
+    const t = computeTwin(profile, [ev('javascript', 'assessment', 2, '2026-01-01T00:00:00.000Z')], 'fullstack');
+    const p = proofBreakdown(t.requirements);
+    assert.ok(p.assessed > 0 && p.unverified > 0);
+    assert.ok(Math.abs(p.total - t.readiness) < 0.2);
+    assert.ok(p.provenShare > 0 && p.provenShare < 100);
   });
 });

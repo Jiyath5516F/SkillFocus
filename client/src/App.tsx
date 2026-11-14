@@ -4,6 +4,7 @@ import { api, type Meta } from './api';
 import { AgentDrawer } from './components/AgentDrawer';
 import { Badge, Button, Spinner } from './components/ui';
 import { Assessments } from './views/Assessments';
+import { Cohort } from './views/Cohort';
 import { Mentor } from './views/Mentor';
 import { Overview } from './views/Overview';
 import { ProfileView } from './views/Profile';
@@ -12,7 +13,7 @@ import { Roadmap } from './views/Roadmap';
 // Career Twin pulls in the charting library, so it is loaded on demand to keep the first load small.
 const Twin = lazy(() => import('./views/Twin').then((m) => ({ default: m.Twin })));
 
-export type View = 'overview' | 'twin' | 'roadmap' | 'assessments' | 'mentor' | 'profile';
+export type View = 'overview' | 'twin' | 'roadmap' | 'assessments' | 'mentor' | 'profile' | 'cohort';
 const VIEWS: { id: View; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'twin', label: 'Career Twin' },
@@ -20,6 +21,7 @@ const VIEWS: { id: View; label: string }[] = [
   { id: 'assessments', label: 'Assessments' },
   { id: 'mentor', label: 'Ask Mira' },
   { id: 'profile', label: 'Profile' },
+  { id: 'cohort', label: 'Cohort insights' },
 ];
 
 interface Ctx {
@@ -178,6 +180,7 @@ export default function App() {
             {view === 'assessments' && <Assessments />}
             {view === 'mentor' && <Mentor />}
             {view === 'profile' && <ProfileView />}
+            {view === 'cohort' && <Cohort />}
           </main>
         </div>
       </div>

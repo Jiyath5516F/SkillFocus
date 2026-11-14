@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { ROLES, ROLE_BY_ID, RESOURCES, SKILLS, SKILL_BY_ID } from '../shared/catalog';
 import type { MilestoneStatus } from '../shared/types';
 import { mentorReply } from './agents/mentor';
+import { cohortReport } from './cohort';
 import { ASSESSMENTS, ASSESSMENT_BY_ID, toPublic } from './assessments';
 import * as store from './db';
 import { countAnswered, grade } from './grading';
@@ -143,6 +144,12 @@ api.patch('/milestones/:key', (req, res) => {
     store.addEvidence({ skillId: m.skillId, source: 'milestone_claim', level: m.targetLevel, detail: `Completed milestone "${m.title}" (not yet assessed)`, refId: `milestone:${key}` });
   }
   res.json(buildState());
+});
+
+api.get('/cohort', (req, res) => {
+  const role = String(req.query.role ?? 'all');
+  if (role !== 'all' && !ROLE_BY_ID[role]) return res.status(400).json({ error: 'Unknown role' });
+  res.json(cohortReport(role));
 });
 
 api.get('/runs', (_req, res) => res.json(store.listRuns(15)));

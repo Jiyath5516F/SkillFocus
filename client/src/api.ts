@@ -16,6 +16,13 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
+export interface CohortReport {
+  roleId: string;
+  learners: { name: string; sample: boolean; roleId: string; readiness: number; provenShare: number; topGap: string | null; assessed: number }[];
+  summary: { learners: number; avgReadiness: number; avgProvenShare: number; assessedLearners: number };
+  priorities: { skillId: string; learnersNeeding: number; learnersAssessedBelow: number; unverifiedClaims: number; impactPoints: number; action: string }[];
+}
+
 export interface Meta { roles: RoleDef[]; skills: SkillDef[]; resources: Resource[]; assessments: { id: string; skillId: string; title: string; questions: number }[] }
 
 export const api = {
@@ -32,4 +39,5 @@ export const api = {
   messages: () => req<MentorMessage[]>('/mentor'),
   ask: (message: string) => req<MentorMessage[]>('/mentor', { method: 'POST', body: JSON.stringify({ message }) }),
   reset: () => req<AppState>('/demo/reset', { method: 'POST' }),
+  cohort: (role: string) => req<CohortReport>(`/cohort?role=${encodeURIComponent(role)}`),
 };

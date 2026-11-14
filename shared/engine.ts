@@ -108,3 +108,22 @@ export function diffMilestones(prev: RoadmapRevision | null, nextKeys: string[])
   const unchanged = commonNext.filter((k) => !moved.includes(k));
   return { added, removed, moved, unchanged };
 }
+
+export interface ProofBreakdown { assessed: number; evidence: number; unverified: number; total: number; provenShare: number }
+
+/**
+ * Splits readiness points by how well they are proven (same formula as readiness):
+ * points = weight × min(effective / required, 1) ÷ Σ weight × 100.
+ */
+export function proofBreakdown(requirements: Pick<RequirementResult, 'weight' | 'effective' | 'required' | 'confidence'>[]): ProofBreakdown {
+  const totalW = requirements.reduce((s, r) => s + r.weight, 0) || 1;
+  const pts = { assessed: 0, evidence: 0, unverified: 0 };
+  for (const r of requirements) {
+    const p = (r.weight * Math.min(r.effective / r.required, 1)) / totalW * 100;
+    if (r.confidence === 'assessed') pts.assessed += p;
+    else if (r.confidence === 'evidence') pts.evidence += p;
+    else pts.unverified += p;
+  }
+  const total = pts.assessed + pts.evidence + pts.unverified;
+  return { ...pts, total, provenShare: total ? Math.round(((pts.assessed + pts.evidence) / total) * 100) : 0 };
+}

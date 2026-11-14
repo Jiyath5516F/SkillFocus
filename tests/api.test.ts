@@ -53,6 +53,22 @@ describe('API validation & security', () => {
   });
 });
 
+describe('cohort insights', () => {
+  it('aggregates the sample cohort plus the live learner, ranked by impact', async () => {
+    const r = await call('/cohort?role=all');
+    assert.equal(r.status, 200);
+    assert.equal(r.json.summary.learners, 13);
+    assert.ok(r.json.learners.some((l: { sample: boolean }) => !l.sample), 'live learner included');
+    const impacts = r.json.priorities.map((p: { impactPoints: number }) => p.impactPoints);
+    assert.deepEqual(impacts, [...impacts].sort((a: number, b: number) => b - a));
+  });
+  it('filters by role and rejects unknown roles', async () => {
+    const r = await call('/cohort?role=data_analyst');
+    assert.ok(r.json.learners.every((l: { roleId: string }) => l.roleId === 'data_analyst'));
+    assert.equal((await call('/cohort?role=astronaut')).status, 400);
+  });
+});
+
 describe('graceful degradation without AI', () => {
   it('still produces a clearly labelled rule-based roadmap', async () => {
     const { json } = await call('/analyze', 'POST');

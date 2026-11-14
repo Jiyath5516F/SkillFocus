@@ -79,13 +79,19 @@ export function AgentDrawer({ open, onClose, activeRun, refreshKey }: { open: bo
     api.runs().then(setRuns).catch(() => setRuns([]));
   }, [open, refreshKey, activeRun?.status]);
   useEffect(() => { if (activeRun) setSelected(activeRun.id); }, [activeRun?.id]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
 
   const shown = activeRun && selected === activeRun.id ? activeRun : runs.find((r) => r.id === selected) ?? activeRun ?? runs[0] ?? null;
 
   return (
     <>
       <div className={`fixed inset-0 z-30 bg-slate-900/20 transition-opacity ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`} onClick={onClose} />
-      <aside className={`fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l border-stone-200 bg-stone-50 shadow-xl transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`} aria-label="Agent activity" aria-hidden={!open}>
+      <aside className={`fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l border-stone-200 bg-stone-50 shadow-xl transition-transform duration-200 ${open ? 'translate-x-0' : 'translate-x-full'}`} aria-label="Agent activity" aria-hidden={!open} inert={!open}>
         <div className="flex items-center justify-between border-b border-stone-200 bg-white px-5 py-4">
           <div>
             <h2 className="font-semibold text-slate-900">Agent activity</h2>

@@ -6,12 +6,13 @@ import type {
   AgentRun, AgentStep, AssessmentAttempt, Evidence, MentorMessage, MilestoneProgress, MilestoneStatus, Profile, RoadmapRevision,
 } from '../shared/types';
 
-const DB_PATH = resolve(process.env.MIRA_DB_PATH ?? 'data/mira.db');
-mkdirSync(dirname(DB_PATH), { recursive: true });
+const RAW_PATH = process.env.MIRA_DB_PATH || 'data/mira.db';
+const DB_PATH = RAW_PATH === ':memory:' ? RAW_PATH : resolve(RAW_PATH);
+if (DB_PATH !== ':memory:') mkdirSync(dirname(DB_PATH), { recursive: true });
 export const db = new DatabaseSync(DB_PATH);
+if (DB_PATH !== ':memory:') db.exec('PRAGMA journal_mode = WAL;');
 
 db.exec(`
-PRAGMA journal_mode = WAL;
 CREATE TABLE IF NOT EXISTS learner (id INTEGER PRIMARY KEY, profile TEXT NOT NULL, insights TEXT, matching TEXT, updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS skill_evidence (id INTEGER PRIMARY KEY AUTOINCREMENT, skill_id TEXT NOT NULL, source TEXT NOT NULL, level REAL NOT NULL, detail TEXT NOT NULL, ref_id TEXT, created_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS assessment_attempt (id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL, created_at TEXT NOT NULL);

@@ -138,7 +138,7 @@ Production: `npm run build && npm start`, which serves the built client and the 
 ## Testing
 
 ```bash
-npm test             # 30 unit + API tests: engine, grading, roadmap assembly, AI-output validation,
+npm test             # 31 unit + API tests: engine, grading, roadmap assembly, AI-output validation,
                      # input validation, security headers, cohort analytics, and the no-AI rule-based fallback
 npm run acceptance   # 3 end-to-end acceptance tests against a running server (real agent runs)
 npm run check        # typecheck + unit tests + production build

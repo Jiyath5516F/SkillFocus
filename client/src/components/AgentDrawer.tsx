@@ -45,7 +45,7 @@ export function RunView({ run }: { run: AgentRun }) {
             {i > 0 && (isParallel(run.steps[i - 1], s)
               ? <span className="font-semibold text-indigo-300" title="Ran in parallel">‖</span>
               : <span className="text-white/60" aria-hidden>→</span>)}
-            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${s.kind === 'llm' ? AGENT_COLORS[s.agent] ?? 'bg-slate-600' : 'bg-slate-400'} ${s.status === 'failed' ? 'opacity-50 line-through' : ''}`}>
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${s.kind === 'llm' ? AGENT_COLORS[s.agent] ?? 'bg-white/15' : 'bg-white/10 text-white/80 ring-1 ring-inset ring-white/15'} ${s.status === 'failed' ? 'opacity-50 line-through' : ''}`}>
               {s.status === 'running' && <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-white" />}
               {s.agent.replace(' (Mentor)', '')}
             </span>
@@ -60,7 +60,7 @@ export function RunView({ run }: { run: AgentRun }) {
           <li key={s.id} className="rounded-lg bg-white/5 p-3 ring-1 ring-white/10">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
-                <span className={`h-2 w-2 shrink-0 rounded-full ${AGENT_COLORS[s.agent] ?? 'bg-slate-400'}`} />
+                <span className={`h-2 w-2 shrink-0 rounded-full ${AGENT_COLORS[s.agent] ?? 'bg-white/40'}`} />
                 <span className="truncate text-sm font-medium text-white">{s.agent}</span>
                 <StatusIcon s={s.status} />
               </div>

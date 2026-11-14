@@ -92,7 +92,7 @@ export function Spinner({ className = '' }: { className?: string }) {
 
 export function Empty({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-white/15 bg-white/60 p-8 text-center">
+    <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.03] p-8 text-center">
       <p className="font-medium text-white">{title}</p>
       {children && <div className="mx-auto mt-1 max-w-md text-sm text-white/60">{children}</div>}
       {action && <div className="mt-4">{action}</div>}
@@ -133,3 +133,11 @@ export function ProofMeter({ requirements }: { requirements: RequirementResult[]
     </div>
   );
 }
+
+/** Dark tooltip styling for Recharts, matching the translucent Headless UI surfaces. */
+export const CHART_TOOLTIP = {
+  contentStyle: { background: 'rgba(23,23,23,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 12 },
+  labelStyle: { color: 'rgba(255,255,255,0.7)' },
+  itemStyle: { color: '#fff' },
+  cursor: { stroke: 'rgba(255,255,255,0.2)' },
+} as const;

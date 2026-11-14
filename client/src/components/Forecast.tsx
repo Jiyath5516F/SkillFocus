@@ -3,7 +3,7 @@ import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Too
 import type { AppState } from '../../../shared/types';
 import { FORECAST_TARGET, useForecast } from '../forecast';
 import { SelectMenu } from './hui';
-import { Badge, Card } from './ui';
+import { Badge, Card, CHART_TOOLTIP } from './ui';
 
 const inWeeks = (w: number) => new Date(Date.now() + w * 7 * 86_400_000).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -32,7 +32,7 @@ export function ForecastCard({ state }: { state: AppState }) {
                 <XAxis dataKey="week" type="number" domain={[0, 'dataMax']} tick={{ fontSize: 11, fill: '#ffffffb3' }} tickFormatter={(w) => `wk ${w}`} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#ffffffb3' }} />
                 <ReferenceLine y={FORECAST_TARGET} stroke="#9ca3af" strokeDasharray="4 3" label={{ value: `${FORECAST_TARGET}% target`, fontSize: 10, fill: '#ffffffb3', position: 'insideTopLeft' }} />
-                <Tooltip formatter={(v) => [`${v}%`, 'Projected readiness']} labelFormatter={(w, p) => `Week ${w}${p?.[0]?.payload?.milestone ? ` · after “${p[0].payload.milestone}”` : ''}`} />
+                <Tooltip {...CHART_TOOLTIP} formatter={(v) => [`${v}%`, 'Projected readiness']} labelFormatter={(w, p) => `Week ${w}${p?.[0]?.payload?.milestone ? ` · after “${p[0].payload.milestone}”` : ''}`} />
                 <Line type="stepAfter" dataKey="readiness" stroke="#818cf8" strokeWidth={2} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>

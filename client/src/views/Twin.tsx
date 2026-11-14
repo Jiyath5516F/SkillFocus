@@ -8,7 +8,7 @@ import { useApp } from '../App';
 import { api } from '../api';
 import { ForecastCard } from '../components/Forecast';
 import { CheckChip } from '../components/hui';
-import { Badge, Button, Card, ConfidenceBadge, Delta, LevelBar, ProofMeter, ReadinessRing, fmtDate } from '../components/ui';
+import { Badge, Button, Card, ConfidenceBadge, Delta, LevelBar, ProofMeter, ReadinessRing, fmtDate, CHART_TOOLTIP } from '../components/ui';
 
 export function Twin() {
   const { state, meta, track, busy, notify } = useApp();
@@ -64,7 +64,7 @@ export function Twin() {
                 <Radar name="Self-reported" dataKey="Self-reported" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.12} />
                 <Radar name="Effective" dataKey="Effective" stroke="#818cf8" fill="#818cf8" fillOpacity={0.45} strokeWidth={2} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Tooltip />
+                <Tooltip {...CHART_TOOLTIP} />
               </RadarChart>
             </ResponsiveContainer>
           </div>
@@ -178,7 +178,7 @@ export function Twin() {
                   <CartesianGrid stroke="#ffffff14" />
                   <XAxis dataKey="v" tick={{ fontSize: 11, fill: '#ffffffb3' }} />
                   <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#ffffffb3' }} />
-                  <Tooltip formatter={(v) => [`${v}%`, 'Readiness']} />
+                  <Tooltip {...CHART_TOOLTIP} formatter={(v) => [`${v}%`, 'Readiness']} />
                   <Line type="monotone" dataKey="readiness" stroke="#818cf8" strokeWidth={2} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>

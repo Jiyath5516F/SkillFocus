@@ -12,8 +12,8 @@ Mira is an AI-powered learning platform that works out a learner's **real** skil
 | ![Overview](docs/screenshots/overview.jpg) | ![Agent activity drawer](docs/screenshots/agents.jpg) |
 | **Adapted roadmap (v2)** | **Ask Mira (grounded mentor)** |
 | ![Roadmap v2 with targeted remediation](docs/screenshots/roadmap.jpg) | ![Mentor explaining the change](docs/screenshots/mentor.jpg) |
-| **Cohort insights (universities & employers)** | |
-| ![Cohort training priorities](docs/screenshots/cohort.jpg) | |
+| **Cohort insights (universities & employers)** | **Readiness forecast (projection)** |
+| ![Cohort training priorities](docs/screenshots/cohort.jpg) | ![Readiness forecast with study-time simulator](docs/screenshots/forecast.jpg) |
 
 *Screenshots are from a real run of the demo scenario: live agent calls and a JavaScript assessment deliberately answered at 2/8.*
 

@@ -67,7 +67,8 @@ const publicUser = (u: User) => ({ id: u.id, name: u.name, email: u.email });
 api.post('/auth/signup', (req, res) => {
   const parsed = SignupSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'Invalid sign-up details' });
-  if (tooManyAttempts([`signup:${req.ip}`], 40, 60 * 60_000)) // generous per IP: judges may share one venue network return res.status(429).json({ error: 'Too many sign-ups from this network. Try again later.' });
+  // Generous per IP: judges may share one venue network.
+  if (tooManyAttempts([`signup:${req.ip}`], 40, 60 * 60_000)) return res.status(429).json({ error: 'Too many sign-ups from this network. Try again later.' });
   if (findUserByEmail(parsed.data.email)) return res.status(409).json({ error: 'An account with this email already exists. Sign in instead.' });
   const user = createUser(parsed.data.name, parsed.data.email, parsed.data.password);
   store.runAsUser(user.id, () => seedDemo(true, user.name)); // starter profile so the full flow can be tried immediately

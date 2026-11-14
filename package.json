@@ -15,7 +15,9 @@
     "start": "NODE_ENV=production tsx server/index.ts",
     "acceptance": "tsx scripts/acceptance.ts",
     "test": "node --import tsx --test tests/*.test.ts",
-    "check": "npm run typecheck && npm test && npm run build"
+    "check": "npm run typecheck && npm test && npm run build",
+    "format": "prettier --write \"{server,shared,client/src,tests,scripts}/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"{server,shared,client/src,tests,scripts}/**/*.{ts,tsx}\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
@@ -40,6 +42,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.3.0",
     "concurrently": "^10.0.7",
+    "prettier": "^3.10.1",
     "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.8"

@@ -21,13 +21,25 @@ Rules:
 - The readiness value is an estimate, never a hiring probability.
 - Use the Skill Intelligence findings (strengths, weaknesses, uncertainties) to explain priorities.`;
 
-export async function runCareerMatching(profile: Profile, twin: TwinResult, insights: unknown = null): Promise<LLMResult<MatchingOutput>> {
+export async function runCareerMatching(
+  profile: Profile,
+  twin: TwinResult,
+  insights: unknown = null,
+): Promise<LLMResult<MatchingOutput>> {
   const role = ROLE_BY_ID[twin.roleId];
   const input = {
     role: { title: role.title, summary: role.summary },
     learner: { background: profile.background, interests: profile.interests },
     readinessEstimate: twin.readiness,
-    requirements: twin.requirements.map((r) => ({ skillId: r.skillId, skill: skillName(r.skillId), required: r.required, effective: r.effective, status: r.status, impactPoints: r.impact, confidence: r.confidence })),
+    requirements: twin.requirements.map((r) => ({
+      skillId: r.skillId,
+      skill: skillName(r.skillId),
+      required: r.required,
+      effective: r.effective,
+      status: r.status,
+      impactPoints: r.impact,
+      confidence: r.confidence,
+    })),
     gapsInPrerequisiteOrder: twin.orderedGaps,
     skillIntelligence: insights, // strengths / weaknesses / uncertainties from the Skill Intelligence Agent
   };
@@ -40,6 +52,8 @@ export function sanitizeMatching(out: MatchingOutput, twin: TwinResult): Matchin
   return {
     headline: out.headline.slice(0, 300),
     criticalPath: [...new Set(out.criticalPath.filter((s) => gaps.has(s)))],
-    notes: out.notes.filter((n) => reqs.has(n.skillId)).map((n) => ({ skillId: n.skillId, note: n.note.slice(0, 300) })),
+    notes: out.notes
+      .filter((n) => reqs.has(n.skillId))
+      .map((n) => ({ skillId: n.skillId, note: n.note.slice(0, 300) })),
   };
 }

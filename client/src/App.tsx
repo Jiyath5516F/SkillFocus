@@ -1,5 +1,26 @@
-import { ArrowRightStartOnRectangleIcon, ChatBubbleLeftRightIcon, ClipboardDocumentCheckIcon, CpuChipIcon, FingerPrintIcon, HomeIcon, MapIcon, UserCircleIcon, UserGroupIcon } from '@heroicons/react/24/outline';
-import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useRef, useState, type ComponentType, type SVGProps } from 'react';
+import {
+  ArrowRightStartOnRectangleIcon,
+  ChatBubbleLeftRightIcon,
+  ClipboardDocumentCheckIcon,
+  CpuChipIcon,
+  FingerPrintIcon,
+  HomeIcon,
+  MapIcon,
+  UserCircleIcon,
+  UserGroupIcon,
+} from '@heroicons/react/24/outline';
+import {
+  createContext,
+  lazy,
+  Suspense,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type SVGProps,
+} from 'react';
 import type { AgentRun, AppState } from '../../shared/types';
 import { api, type Meta, type SessionUser } from './api';
 import { AgentDrawer } from './components/AgentDrawer';
@@ -70,25 +91,31 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
     window.setTimeout(() => setToast(null), 6000);
   }, []);
 
-  const track = useCallback((runId: number) => {
-    setDrawer(true);
-    if (polling.current) window.clearInterval(polling.current);
-    const tick = async () => {
-      try {
-        const run = await api.run(runId);
-        setActiveRun(run);
-        if (run.status !== 'running') {
-          if (polling.current) window.clearInterval(polling.current);
-          polling.current = null;
-          await refresh();
-          if (run.status === 'failed') notify('The agent run failed. Details are in Agent activity.');
-          else if (run.status === 'completed_with_fallback') notify('Some AI steps failed — rule-based results were used where needed.', 'info');
+  const track = useCallback(
+    (runId: number) => {
+      setDrawer(true);
+      if (polling.current) window.clearInterval(polling.current);
+      const tick = async () => {
+        try {
+          const run = await api.run(runId);
+          setActiveRun(run);
+          if (run.status !== 'running') {
+            if (polling.current) window.clearInterval(polling.current);
+            polling.current = null;
+            await refresh();
+            if (run.status === 'failed') notify('The agent run failed. Details are in Agent activity.');
+            else if (run.status === 'completed_with_fallback')
+              notify('Some AI steps failed — rule-based results were used where needed.', 'info');
+          }
+        } catch {
+          /* keep polling */
         }
-      } catch { /* keep polling */ }
-    };
-    void tick();
-    polling.current = window.setInterval(tick, 1000);
-  }, [refresh, notify]);
+      };
+      void tick();
+      polling.current = window.setInterval(tick, 1000);
+    },
+    [refresh, notify],
+  );
 
   useEffect(() => {
     Promise.all([api.state(), api.meta()])
@@ -103,7 +130,11 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
     return () => window.removeEventListener('hashchange', onHash);
   }, [track]);
 
-  const go = (v: View) => { window.location.hash = v; setView(v); window.scrollTo({ top: 0 }); };
+  const go = (v: View) => {
+    window.location.hash = v;
+    setView(v);
+    window.scrollTo({ top: 0 });
+  };
 
   if (loadError) {
     return (
@@ -111,17 +142,32 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
         <div className="max-w-md rounded-xl bg-white/5 p-6 text-center ring-1 ring-rose-400/30">
           <p className="font-semibold text-white">Mira can't load</p>
           <p className="mt-1 text-sm text-white/70">{loadError}</p>
-          <Button className="mt-4" onClick={() => window.location.reload()}>Retry</Button>
+          <Button className="mt-4" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
         </div>
       </div>
     );
   }
   if (!state || !meta) {
-    return <div className="flex min-h-screen items-center justify-center gap-2 text-white/60"><Spinner /> Loading Mira…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center gap-2 text-white/60">
+        <Spinner /> Loading Mira…
+      </div>
+    );
   }
 
   if (state.profile.onboarded === false) {
-    return <Onboarding meta={meta} profile={state.profile} onDone={async (runId) => { await refresh(); if (runId) track(runId); }} />;
+    return (
+      <Onboarding
+        meta={meta}
+        profile={state.profile}
+        onDone={async (runId) => {
+          await refresh();
+          if (runId) track(runId);
+        }}
+      />
+    );
   }
 
   const busy = activeRun?.status === 'running';
@@ -130,7 +176,16 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
 
   return (
     <AppCtx.Provider value={ctx}>
-      <a href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }} className="sr-only z-50 rounded bg-neutral-900 px-3 py-2 text-sm text-white shadow focus:not-sr-only focus:fixed focus:top-2 focus:left-2">Skip to content</a>
+      <a
+        href="#main"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById('main')?.focus();
+        }}
+        className="sr-only z-50 rounded bg-neutral-900 px-3 py-2 text-sm text-white shadow focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+      >
+        Skip to content
+      </a>
       <div className="min-h-screen lg:flex">
         <aside className="border-b border-white/10 bg-black/40 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-b-0">
           <div className="flex items-center justify-between px-5 py-4 lg:block">
@@ -144,8 +199,12 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
           </div>
           <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:pb-0" aria-label="Main">
             {VIEWS.map((v) => (
-              <button key={v.id} onClick={() => go(v.id)} aria-current={view === v.id ? 'page' : undefined}
-                className={`flex shrink-0 items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-semibold transition-colors ${view === v.id ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}>
+              <button
+                key={v.id}
+                onClick={() => go(v.id)}
+                aria-current={view === v.id ? 'page' : undefined}
+                className={`flex shrink-0 items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-semibold transition-colors ${view === v.id ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}
+              >
                 <v.icon aria-hidden className="size-5 shrink-0" />
                 {v.label}
               </button>
@@ -154,7 +213,12 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
           <div className="hidden px-3 pb-4 lg:mt-auto lg:block">
             <div className="rounded-lg bg-white/5 p-3 text-xs text-white/70 ring-1 ring-white/10">
               <div className="flex items-center gap-2.5">
-                <span aria-hidden className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white">{user.name.trim().charAt(0).toUpperCase()}</span>
+                <span
+                  aria-hidden
+                  className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white"
+                >
+                  {user.name.trim().charAt(0).toUpperCase()}
+                </span>
                 <div className="min-w-0">
                   <div className="truncate font-semibold text-white">{user.name}</div>
                   <div className="truncate text-white/60">{user.email}</div>
@@ -164,7 +228,10 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
                 <span className={`h-2 w-2 rounded-full ${state.aiConfigured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                 {state.aiConfigured ? 'AI agents online' : 'AI offline — rule-based mode'}
               </div>
-              <button onClick={onSignOut} className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md bg-white/5 px-2 py-1.5 text-xs font-semibold text-white/80 ring-1 ring-inset ring-white/10 hover:bg-white/10 hover:text-white">
+              <button
+                onClick={onSignOut}
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md bg-white/5 px-2 py-1.5 text-xs font-semibold text-white/80 ring-1 ring-inset ring-white/10 hover:bg-white/10 hover:text-white"
+              >
                 <ArrowRightStartOnRectangleIcon aria-hidden className="size-4" /> Sign out
               </button>
             </div>
@@ -179,13 +246,29 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
               <Badge tone="brand">{state.twin.readiness}% ready (est.)</Badge>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="secondary" className="lg:hidden" onClick={onSignOut} title="Sign out"><ArrowRightStartOnRectangleIcon aria-hidden className="size-4" /><span className="sr-only">Sign out</span></Button>
-              <button onClick={() => setDrawer(true)} aria-live="polite"
-                className={`relative inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white transition ${busy
-                  ? 'bg-indigo-500/20 shadow-[0_0_24px_-2px_rgba(129,140,248,0.75)] ring-1 ring-indigo-400/70'
-                  : 'bg-white/5 ring-1 ring-inset ring-white/10 hover:bg-white/10'}`}>
-                {busy && <span aria-hidden className="absolute -top-1 -right-1 flex size-3"><span className="absolute inline-flex size-full animate-ping rounded-full bg-indigo-400 opacity-75" /><span className="relative inline-flex size-3 rounded-full bg-indigo-400" /></span>}
-                <CpuChipIcon aria-hidden className={`size-4 ${busy ? 'animate-spin [animation-duration:3s] text-indigo-300' : ''}`} />
+              <Button variant="secondary" className="lg:hidden" onClick={onSignOut} title="Sign out">
+                <ArrowRightStartOnRectangleIcon aria-hidden className="size-4" />
+                <span className="sr-only">Sign out</span>
+              </Button>
+              <button
+                onClick={() => setDrawer(true)}
+                aria-live="polite"
+                className={`relative inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white transition ${
+                  busy
+                    ? 'bg-indigo-500/20 shadow-[0_0_24px_-2px_rgba(129,140,248,0.75)] ring-1 ring-indigo-400/70'
+                    : 'bg-white/5 ring-1 ring-inset ring-white/10 hover:bg-white/10'
+                }`}
+              >
+                {busy && (
+                  <span aria-hidden className="absolute -top-1 -right-1 flex size-3">
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-indigo-400 opacity-75" />
+                    <span className="relative inline-flex size-3 rounded-full bg-indigo-400" />
+                  </span>
+                )}
+                <CpuChipIcon
+                  aria-hidden
+                  className={`size-4 ${busy ? 'animate-spin [animation-duration:3s] text-indigo-300' : ''}`}
+                />
                 {busy ? 'Agents working…' : 'Agent activity'}
               </button>
             </div>
@@ -193,16 +276,37 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
 
           {!state.aiConfigured && (
             <div className="mx-4 mt-4 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm text-amber-300 sm:mx-8">
-              AI is not configured on the server — showing rule-based results only. Numbers are unaffected (they are always deterministic).
+              AI is not configured on the server — showing rule-based results only. Numbers are unaffected (they are
+              always deterministic).
             </div>
           )}
 
           <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 focus:outline-none sm:px-8">
             {view === 'overview' && <Overview />}
-            {view === 'twin' && <Suspense fallback={<div className="flex items-center gap-2 text-white/60"><Spinner /> Loading Career Twin…</div>}><Twin /></Suspense>}
+            {view === 'twin' && (
+              <Suspense
+                fallback={
+                  <div className="flex items-center gap-2 text-white/60">
+                    <Spinner /> Loading Career Twin…
+                  </div>
+                }
+              >
+                <Twin />
+              </Suspense>
+            )}
             {view === 'roadmap' && <Roadmap />}
             {view === 'assessments' && <Assessments />}
-            {view === 'mentor' && <Suspense fallback={<div className="flex items-center gap-2 text-white/60"><Spinner /> Loading Mira…</div>}><Mentor /></Suspense>}
+            {view === 'mentor' && (
+              <Suspense
+                fallback={
+                  <div className="flex items-center gap-2 text-white/60">
+                    <Spinner /> Loading Mira…
+                  </div>
+                }
+              >
+                <Mentor />
+              </Suspense>
+            )}
             {view === 'profile' && <ProfileView />}
             {view === 'cohort' && <Cohort />}
           </main>
@@ -215,7 +319,10 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
       <AgentDrawer open={drawer} onClose={() => setDrawer(false)} activeRun={activeRun} refreshKey={refreshKey} />
 
       {toast && (
-        <div role="status" className={`fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg px-4 py-2.5 text-sm shadow-lg ${toast.tone === 'error' ? 'bg-rose-500/90 text-white' : 'bg-neutral-800 text-white ring-1 ring-white/10'}`}>
+        <div
+          role="status"
+          className={`fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg px-4 py-2.5 text-sm shadow-lg ${toast.tone === 'error' ? 'bg-rose-500/90 text-white' : 'bg-neutral-800 text-white ring-1 ring-white/10'}`}
+        >
           {toast.msg}
         </div>
       )}

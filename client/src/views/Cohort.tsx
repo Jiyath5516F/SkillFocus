@@ -13,7 +13,10 @@ export function Cohort() {
 
   useEffect(() => {
     setReport(null);
-    api.cohort(role).then(setReport).catch((e) => notify((e as Error).message));
+    api
+      .cohort(role)
+      .then(setReport)
+      .catch((e) => notify((e as Error).message));
   }, [role, notify, state.twin.readiness]);
 
   const maxImpact = Math.max(1, ...(report?.priorities.map((p) => p.impactPoints) ?? [1]));
@@ -24,18 +27,34 @@ export function Cohort() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Cohort insights</h1>
           <p className="mt-1 max-w-3xl text-sm text-white/60">
-            For universities and employers: which skills a group actually lacks, how much of it is <em>proven</em>, and where training would move readiness most.
+            For universities and employers: which skills a group actually lacks, how much of it is <em>proven</em>, and
+            where training would move readiness most.
           </p>
         </div>
-        <SelectMenu label="Target role" srOnlyLabel className="w-56" value={role} onChange={setRole}
-          options={[{ value: 'all', label: 'All target roles' }, ...meta.roles.map((r) => ({ value: r.id, label: r.title }))]} />
+        <SelectMenu
+          label="Target role"
+          srOnlyLabel
+          className="w-56"
+          value={role}
+          onChange={setRole}
+          options={[
+            { value: 'all', label: 'All target roles' },
+            ...meta.roles.map((r) => ({ value: r.id, label: r.title })),
+          ]}
+        />
       </div>
 
       <div className="rounded-lg border border-indigo-400/30 bg-indigo-400/10 px-4 py-2 text-sm text-indigo-300">
-        Preview with sample data: 12 example learners (not real people) plus your own live profile. Each account's data stays private, so an institution would see its own learners here only after they join and consent. The numbers use the same readiness formula as Career Twin.
+        Preview with sample data: 12 example learners (not real people) plus your own live profile. Each account's data
+        stays private, so an institution would see its own learners here only after they join and consent. The numbers
+        use the same readiness formula as Career Twin.
       </div>
 
-      {!report ? <p className="flex items-center gap-2 text-sm text-white/60"><Spinner /> Computing cohort…</p> : (
+      {!report ? (
+        <p className="flex items-center gap-2 text-sm text-white/60">
+          <Spinner /> Computing cohort…
+        </p>
+      ) : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
@@ -51,23 +70,42 @@ export function Cohort() {
             ))}
           </div>
 
-          <Card title="Training priorities" subtitle="Ranked by total readiness points the cohort would gain — a deterministic sum of each learner's skill impact">
-            {report.priorities.length === 0 ? <p className="text-sm text-white/60">No gaps in this group.</p> : (
+          <Card
+            title="Training priorities"
+            subtitle="Ranked by total readiness points the cohort would gain — a deterministic sum of each learner's skill impact"
+          >
+            {report.priorities.length === 0 ? (
+              <p className="text-sm text-white/60">No gaps in this group.</p>
+            ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead className="text-xs uppercase tracking-wide text-white/60">
-                    <tr><th className="py-2 pr-4">Skill</th><th className="pr-4">Learners with gap</th><th className="pr-4">Verified by assessment</th><th className="pr-4">Unverified claims</th><th className="min-w-40 pr-4">Readiness impact</th><th>Suggested action</th></tr>
+                    <tr>
+                      <th className="py-2 pr-4">Skill</th>
+                      <th className="pr-4">Learners with gap</th>
+                      <th className="pr-4">Verified by assessment</th>
+                      <th className="pr-4">Unverified claims</th>
+                      <th className="min-w-40 pr-4">Readiness impact</th>
+                      <th>Suggested action</th>
+                    </tr>
                   </thead>
                   <tbody className="divide-y divide-white/10">
                     {report.priorities.slice(0, 10).map((p) => (
                       <tr key={p.skillId}>
                         <td className="py-2.5 pr-4 font-medium text-white">{skillName(p.skillId)}</td>
-                        <td className="pr-4 tabular-nums">{p.learnersNeeding}/{report.summary.learners}</td>
+                        <td className="pr-4 tabular-nums">
+                          {p.learnersNeeding}/{report.summary.learners}
+                        </td>
                         <td className="pr-4 tabular-nums">{p.learnersAssessedBelow}</td>
                         <td className="pr-4 tabular-nums">{p.unverifiedClaims}</td>
                         <td className="pr-4">
                           <div className="flex items-center gap-2">
-                            <div className="h-2 flex-1 rounded-full bg-white/10"><div className="h-2 rounded-full bg-white" style={{ width: `${(p.impactPoints / maxImpact) * 100}%` }} /></div>
+                            <div className="h-2 flex-1 rounded-full bg-white/10">
+                              <div
+                                className="h-2 rounded-full bg-white"
+                                style={{ width: `${(p.impactPoints / maxImpact) * 100}%` }}
+                              />
+                            </div>
                             <span className="w-12 text-right tabular-nums text-white/70">{p.impactPoints}</span>
                           </div>
                         </td>
@@ -84,12 +122,20 @@ export function Cohort() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-xs uppercase tracking-wide text-white/60">
-                  <tr><th className="py-2 pr-4">Learner</th><th className="pr-4">Target role</th><th className="pr-4">Readiness (est.)</th><th className="pr-4">Proven</th><th>Next priority</th></tr>
+                  <tr>
+                    <th className="py-2 pr-4">Learner</th>
+                    <th className="pr-4">Target role</th>
+                    <th className="pr-4">Readiness (est.)</th>
+                    <th className="pr-4">Proven</th>
+                    <th>Next priority</th>
+                  </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
                   {report.learners.map((l) => (
                     <tr key={l.name} className={l.sample ? '' : 'bg-indigo-400/10'}>
-                      <td className="py-2.5 pr-4 font-medium text-white">{l.name} {!l.sample && <Badge tone="brand">live</Badge>}</td>
+                      <td className="py-2.5 pr-4 font-medium text-white">
+                        {l.name} {!l.sample && <Badge tone="brand">live</Badge>}
+                      </td>
                       <td className="pr-4 text-white/70">{ROLE_BY_ID[l.roleId]?.title}</td>
                       <td className="pr-4 tabular-nums">{l.readiness}%</td>
                       <td className="pr-4 tabular-nums">{l.provenShare}%</td>

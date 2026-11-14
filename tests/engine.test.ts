@@ -1,15 +1,41 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { computeTwin, diffMilestones, estimateSkill, forecastReadiness, orderByPrereqs, proofBreakdown, scoreToLevel, weeksToReach } from '../shared/engine';
+import {
+  computeTwin,
+  diffMilestones,
+  estimateSkill,
+  forecastReadiness,
+  orderByPrereqs,
+  proofBreakdown,
+  scoreToLevel,
+  weeksToReach,
+} from '../shared/engine';
 import type { Evidence, Profile, RoadmapRevision } from '../shared/types';
 
 const profile: Profile = {
-  name: 'Test', background: '', currentRole: '', interests: '', targetRoleId: 'fullstack', weeklyHours: 8,
-  skills: [{ skillId: 'python', selfLevel: 3 }, { skillId: 'sql', selfLevel: 2 }, { skillId: 'html', selfLevel: 1 }],
-  certifications: [], projects: [],
+  name: 'Test',
+  background: '',
+  currentRole: '',
+  interests: '',
+  targetRoleId: 'fullstack',
+  weeklyHours: 8,
+  skills: [
+    { skillId: 'python', selfLevel: 3 },
+    { skillId: 'sql', selfLevel: 2 },
+    { skillId: 'html', selfLevel: 1 },
+  ],
+  certifications: [],
+  projects: [],
 };
 let id = 0;
-const ev = (skillId: string, source: Evidence['source'], level: number, createdAt: string): Evidence => ({ id: ++id, skillId, source, level, detail: 'test', createdAt });
+const ev = (skillId: string, source: Evidence['source'], level: number, createdAt: string): Evidence => ({
+  id: ++id,
+  skillId,
+  source,
+  level,
+  detail: 'test',
+  createdAt,
+});
 
 describe('scoreToLevel', () => {
   it('maps score bands to verified levels', () => {
@@ -33,14 +59,20 @@ describe('estimateSkill', () => {
     assert.equal(e.confidence, 'evidence');
   });
   it('lets an assessment supersede earlier claims, even when it is lower', () => {
-    const evidence = [ev('javascript', 'milestone_claim', 3, '2026-01-01T00:00:00.000Z'), ev('javascript', 'assessment', 1, '2026-01-02T00:00:00.000Z')];
+    const evidence = [
+      ev('javascript', 'milestone_claim', 3, '2026-01-01T00:00:00.000Z'),
+      ev('javascript', 'assessment', 1, '2026-01-02T00:00:00.000Z'),
+    ];
     const e = estimateSkill('javascript', profile, evidence);
     assert.equal(e.effective, 1);
     assert.equal(e.confidence, 'assessed');
     assert.equal(e.verifiedLevel, 1);
   });
   it('counts claims made after an assessment (discounted)', () => {
-    const evidence = [ev('javascript', 'assessment', 1, '2026-01-02T00:00:00.000Z'), ev('javascript', 'milestone_claim', 3, '2026-01-03T00:00:00.000Z')];
+    const evidence = [
+      ev('javascript', 'assessment', 1, '2026-01-02T00:00:00.000Z'),
+      ev('javascript', 'milestone_claim', 3, '2026-01-03T00:00:00.000Z'),
+    ];
     assert.equal(estimateSkill('javascript', profile, evidence).effective, 2.3);
   });
   it('returns zero for unknown skills', () => {
@@ -117,6 +149,15 @@ describe('forecastReadiness', () => {
   it('scales with weekly hours and skips completed milestones', () => {
     assert.equal(forecastReadiness(profile, [], 'fullstack', ms, new Set(), 16).at(-1)!.week, 2.8);
     assert.equal(forecastReadiness(profile, [], 'fullstack', ms, new Set(['learn:javascript']), 8).length, 3);
-    assert.equal(weeksToReach([{ week: 0, readiness: 10, milestone: null }, { week: 3, readiness: 72, milestone: 'x' }], 70), 3);
+    assert.equal(
+      weeksToReach(
+        [
+          { week: 0, readiness: 10, milestone: null },
+          { week: 3, readiness: 72, milestone: 'x' },
+        ],
+        70,
+      ),
+      3,
+    );
   });
 });

@@ -8,10 +8,15 @@ export function Mentor() {
         <MiraAvatar size="lg" />
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Ask Mira</h1>
-          <p className="mt-1 text-sm text-white/60">Your mentor answers from your actual profile, evidence, assessments and roadmap history — never invented achievements.</p>
+          <p className="mt-1 text-sm text-white/60">
+            Your mentor answers from your actual profile, evidence, assessments and roadmap history — never invented
+            achievements.
+          </p>
         </div>
       </div>
-      <div className="min-h-0 flex-1"><MentorChat /></div>
+      <div className="min-h-0 flex-1">
+        <MentorChat />
+      </div>
     </div>
   );
 }

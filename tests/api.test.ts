@@ -16,18 +16,33 @@ let cookie = '';
 const call = async (path: string, method = 'GET', body?: unknown, auth: string | null = cookie) => {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (auth) headers.Cookie = auth;
-  const res = await fetch(base + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+  const res = await fetch(base + path, {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
   return { status: res.status, headers: res.headers, json: (await res.json()) as any };
 };
 const sessionFrom = (headers: Headers) => (headers.get('set-cookie') ?? '').split(';')[0];
 const waitRun = async (id: number): Promise<AgentRun> => {
-  for (;;) { const run: AgentRun = (await call(`/runs/${id}`)).json; if (run.status !== 'running') return run; await new Promise((r) => setTimeout(r, 20)); }
+  for (;;) {
+    const run: AgentRun = (await call(`/runs/${id}`)).json;
+    if (run.status !== 'running') return run;
+    await new Promise((r) => setTimeout(r, 20));
+  }
 };
 
 before(async () => {
-  await new Promise<void>((r) => { server = app.listen(0, '127.0.0.1', () => r()); });
+  await new Promise<void>((r) => {
+    server = app.listen(0, '127.0.0.1', () => r());
+  });
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`;
-  const r = await call('/auth/signup', 'POST', { name: 'Test Learner', email: 'test@example.com', password: 'secret-pass-1' }, null);
+  const r = await call(
+    '/auth/signup',
+    'POST',
+    { name: 'Test Learner', email: 'test@example.com', password: 'secret-pass-1' },
+    null,
+  );
   assert.equal(r.status, 201);
   cookie = sessionFrom(r.headers);
 });
@@ -53,11 +68,23 @@ describe('authentication & account isolation', () => {
     assert.equal(wrong.status, 401);
     const unknown = await call('/auth/login', 'POST', { email: 'nobody@example.com', password: 'nope-nope-1' }, null);
     assert.equal(unknown.json.error, wrong.json.error, 'no account enumeration');
-    assert.equal((await call('/auth/signup', 'POST', { name: 'X', email: 'weak@example.com', password: 'short' }, null)).status, 400);
-    assert.equal((await call('/auth/signup', 'POST', { name: 'X', email: 'test@example.com', password: 'secret-pass-1' }, null)).status, 409);
+    assert.equal(
+      (await call('/auth/signup', 'POST', { name: 'X', email: 'weak@example.com', password: 'short' }, null)).status,
+      400,
+    );
+    assert.equal(
+      (await call('/auth/signup', 'POST', { name: 'X', email: 'test@example.com', password: 'secret-pass-1' }, null))
+        .status,
+      409,
+    );
   });
   it("keeps each account's data separate", async () => {
-    const other = await call('/auth/signup', 'POST', { name: 'Other Person', email: 'other@example.com', password: 'another-pass-2' }, null);
+    const other = await call(
+      '/auth/signup',
+      'POST',
+      { name: 'Other Person', email: 'other@example.com', password: 'another-pass-2' },
+      null,
+    );
     const otherCookie = sessionFrom(other.headers);
     const mine = (await call('/state')).json;
     const theirs = (await call('/state', 'GET', undefined, otherCookie)).json;
@@ -92,7 +119,10 @@ describe('API validation & security', () => {
   it('rejects invalid profiles and unknown career goals', async () => {
     const { json: s } = await call('/state');
     assert.equal((await call('/profile', 'PUT', { ...s.profile, targetRoleId: 'astronaut' })).status, 400);
-    assert.equal((await call('/profile', 'PUT', { ...s.profile, skills: [{ skillId: 'python', selfLevel: 9 }] })).status, 400);
+    assert.equal(
+      (await call('/profile', 'PUT', { ...s.profile, skills: [{ skillId: 'python', selfLevel: 9 }] })).status,
+      400,
+    );
     assert.equal((await call('/profile', 'PUT', { ...s.profile, name: '' })).status, 400);
     assert.equal((await call('/goal', 'POST', { roleId: 'astronaut' })).status, 400);
   });
@@ -104,7 +134,11 @@ describe('API validation & security', () => {
     assert.equal((await call('/state')).status, 200);
   });
   it('returns 400 for malformed JSON', async () => {
-    const res = await fetch(base + '/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{not json' });
+    const res = await fetch(base + '/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{not json',
+    });
     assert.equal(res.status, 400);
   });
   it('rejects milestone updates for unknown milestones', async () => {
@@ -117,9 +151,15 @@ describe('cohort insights', () => {
     const r = await call('/cohort?role=all');
     assert.equal(r.status, 200);
     assert.equal(r.json.summary.learners, 13);
-    assert.ok(r.json.learners.some((l: { sample: boolean }) => !l.sample), 'live learner included');
+    assert.ok(
+      r.json.learners.some((l: { sample: boolean }) => !l.sample),
+      'live learner included',
+    );
     const impacts = r.json.priorities.map((p: { impactPoints: number }) => p.impactPoints);
-    assert.deepEqual(impacts, [...impacts].sort((a: number, b: number) => b - a));
+    assert.deepEqual(
+      impacts,
+      [...impacts].sort((a: number, b: number) => b - a),
+    );
   });
   it('filters by role and rejects unknown roles', async () => {
     const r = await call('/cohort?role=data_analyst');
@@ -130,16 +170,37 @@ describe('cohort insights', () => {
 
 describe('custom career aims', () => {
   it('saves a sanitised custom aim that only its owner can target', async () => {
-    const created = await call('/roles', 'POST', { title: 'Cloud Support Engineer', summary: 'Keeps cloud apps running.', requirements: [
-      { skillId: 'python', level: 2, weight: 3 }, { skillId: 'git', level: 2, weight: 2 }, { skillId: 'rest_api', level: 9, weight: 7 }, { skillId: 'kubernetes', level: 2, weight: 2 }] });
+    const created = await call('/roles', 'POST', {
+      title: 'Cloud Support Engineer',
+      summary: 'Keeps cloud apps running.',
+      requirements: [
+        { skillId: 'python', level: 2, weight: 3 },
+        { skillId: 'git', level: 2, weight: 2 },
+        { skillId: 'rest_api', level: 9, weight: 7 },
+        { skillId: 'kubernetes', level: 2, weight: 2 },
+      ],
+    });
     assert.equal(created.status, 201);
     const role = created.json.role;
     assert.match(role.id, /^custom-/);
-    assert.deepEqual(role.requirements.map((r: { skillId: string }) => r.skillId), ['python', 'git', 'rest_api'], 'unknown skills dropped');
+    assert.deepEqual(
+      role.requirements.map((r: { skillId: string }) => r.skillId),
+      ['python', 'git', 'rest_api'],
+      'unknown skills dropped',
+    );
     assert.equal(role.requirements[2].level, 4, 'level clamped');
-    const other = await call('/auth/signup', 'POST', { name: 'Intruder', email: 'intruder@example.com', password: 'intruder-pass-1' }, null);
+    const other = await call(
+      '/auth/signup',
+      'POST',
+      { name: 'Intruder', email: 'intruder@example.com', password: 'intruder-pass-1' },
+      null,
+    );
     const otherCookie = sessionFrom(other.headers);
-    assert.equal((await call('/goal', 'POST', { roleId: role.id }, otherCookie)).status, 400, "cannot target another learner's aim");
+    assert.equal(
+      (await call('/goal', 'POST', { roleId: role.id }, otherCookie)).status,
+      400,
+      "cannot target another learner's aim",
+    );
     const mine = (await call('/state')).json;
     assert.ok(mine.profile.customRoles.some((r: { id: string }) => r.id === role.id));
   });
@@ -151,25 +212,65 @@ describe('custom career aims', () => {
     const kicad = created.json.skill;
     assert.match(kicad.id, /^cs-/);
     const { json: st } = await call('/state');
-    assert.equal((await call('/profile?analyze=false', 'PUT', { ...st.profile, skills: [{ skillId: kicad.id, selfLevel: 2 }] })).status, 200);
-    const other = await call('/auth/login', 'POST', { email: 'intruder@example.com', password: 'intruder-pass-1' }, null);
+    assert.equal(
+      (await call('/profile?analyze=false', 'PUT', { ...st.profile, skills: [{ skillId: kicad.id, selfLevel: 2 }] }))
+        .status,
+      200,
+    );
+    const other = await call(
+      '/auth/login',
+      'POST',
+      { email: 'intruder@example.com', password: 'intruder-pass-1' },
+      null,
+    );
     const otherState = (await call('/state', 'GET', undefined, sessionFrom(other.headers))).json;
-    const r = await call('/profile?analyze=false', 'PUT', { ...otherState.profile, skills: [{ skillId: kicad.id, selfLevel: 2 }] }, sessionFrom(other.headers));
+    const r = await call(
+      '/profile?analyze=false',
+      'PUT',
+      { ...otherState.profile, skills: [{ skillId: kicad.id, selfLevel: 2 }] },
+      sessionFrom(other.headers),
+    );
     assert.equal(r.status, 400, "cannot claim another learner's custom skill");
   });
   it('turns new skill names in a designed aim into custom skills', async () => {
-    const r = await call('/roles', 'POST', { title: 'PCB Designer', summary: 'Designs circuit boards.', requirements: [
-      { name: 'PCB layout', level: 3, weight: 3 }, { name: 'Circuit design', level: 2, weight: 2 }, { skillId: 'git', level: 2, weight: 1 }] });
+    const r = await call('/roles', 'POST', {
+      title: 'PCB Designer',
+      summary: 'Designs circuit boards.',
+      requirements: [
+        { name: 'PCB layout', level: 3, weight: 3 },
+        { name: 'Circuit design', level: 2, weight: 2 },
+        { skillId: 'git', level: 2, weight: 1 },
+      ],
+    });
     assert.equal(r.status, 201);
     assert.equal(r.json.role.requirements.length, 3);
     assert.ok(r.json.role.requirements.slice(0, 2).every((q: { skillId: string }) => q.skillId.startsWith('cs-')));
-    const goal = await call('/profile?analyze=false', 'PUT', { ...(await call('/state')).json.profile, targetRoleId: r.json.role.id });
+    const goal = await call('/profile?analyze=false', 'PUT', {
+      ...(await call('/state')).json.profile,
+      targetRoleId: r.json.role.id,
+    });
     assert.equal(goal.status, 200);
     const twin = (await call('/state')).json.twin;
-    assert.ok(twin.orderedGaps.some((id: string) => id.startsWith('cs-')), 'custom skills are real requirements in the Career Twin');
+    assert.ok(
+      twin.orderedGaps.some((id: string) => id.startsWith('cs-')),
+      'custom skills are real requirements in the Career Twin',
+    );
   });
   it('rejects aims without enough catalog skills', async () => {
-    assert.equal((await call('/roles', 'POST', { title: 'X', summary: '', requirements: [{ skillId: 'nope', level: 1, weight: 1 }, { skillId: 'nah', level: 1, weight: 1 }, { skillId: 'no', level: 1, weight: 1 }] })).status, 400);
+    assert.equal(
+      (
+        await call('/roles', 'POST', {
+          title: 'X',
+          summary: '',
+          requirements: [
+            { skillId: 'nope', level: 1, weight: 1 },
+            { skillId: 'nah', level: 1, weight: 1 },
+            { skillId: 'no', level: 1, weight: 1 },
+          ],
+        })
+      ).status,
+      400,
+    );
   });
 });
 
@@ -178,7 +279,9 @@ describe('core scenarios without AI (rule-based fallback)', () => {
     await call('/demo/reset', 'POST');
     await waitRun((await call('/analyze', 'POST')).json.runId);
     const KEY: Record<string, number> = { js1: 1, js2: 2, js3: 2, js4: 1, js5: 1, js6: 2, js7: 1, js8: 1 };
-    const answers = Object.fromEntries(Object.entries(KEY).map(([k, v]) => [k, ['js1', 'js2'].includes(k) ? v : (v + 1) % 4]));
+    const answers = Object.fromEntries(
+      Object.entries(KEY).map(([k, v]) => [k, ['js1', 'js2'].includes(k) ? v : (v + 1) % 4]),
+    );
     const sub = await call('/assessments/js-core/submit', 'POST', { answers });
     assert.equal(sub.json.attempt.score, 25);
     await waitRun(sub.json.runId);
@@ -192,7 +295,10 @@ describe('core scenarios without AI (rule-based fallback)', () => {
     const after = (await call('/state')).json;
     assert.equal(after.roadmap.roleId, 'data_analyst');
     assert.equal(after.attempts.length, before.attempts.length);
-    assert.ok(after.revisions.some((r: { roleId: string }) => r.roleId === 'fullstack'), 'earlier plan kept');
+    assert.ok(
+      after.revisions.some((r: { roleId: string }) => r.roleId === 'fullstack'),
+      'earlier plan kept',
+    );
     assert.ok(after.matching.alternatives.length >= 3, 'roles ranked by Career Matching');
   });
 });
@@ -202,7 +308,9 @@ describe('graceful degradation without AI', () => {
     await call('/demo/reset', 'POST'); // independent of earlier tests' profile changes
     const { json } = await call('/analyze', 'POST');
     let run: AgentRun;
-    do { run = (await call(`/runs/${json.runId}`)).json; } while (run.status === 'running');
+    do {
+      run = (await call(`/runs/${json.runId}`)).json;
+    } while (run.status === 'running');
     assert.equal(run.status, 'completed_with_fallback');
     assert.ok(run.steps.some((s) => s.kind === 'fallback'));
     assert.ok(!run.steps.some((s) => s.kind === 'llm' && s.status === 'completed'), 'no AI step may claim success');

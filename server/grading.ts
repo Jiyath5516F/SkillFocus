@@ -16,12 +16,20 @@ export interface GradeResult {
 export type Answers = Record<string, number | null>;
 
 /** Returns the number of questions with an answer, so callers can reject incomplete submissions. */
-export const countAnswered = (def: AssessmentDef, answers: Answers) => def.questions.filter((q) => typeof answers[q.id] === 'number').length;
+export const countAnswered = (def: AssessmentDef, answers: Answers) =>
+  def.questions.filter((q) => typeof answers[q.id] === 'number').length;
 
 export function grade(def: AssessmentDef, answers: Answers): GradeResult {
   const questionResults: QuestionResult[] = def.questions.map((q) => {
     const chosen = answers[q.id] ?? null;
-    return { questionId: q.id, concept: q.concept, chosen, correctIndex: q.answer, correct: chosen === q.answer, explanation: q.explanation };
+    return {
+      questionId: q.id,
+      concept: q.concept,
+      chosen,
+      correctIndex: q.answer,
+      correct: chosen === q.answer,
+      explanation: q.explanation,
+    };
   });
   const correct = questionResults.filter((r) => r.correct).length;
   const total = def.questions.length;

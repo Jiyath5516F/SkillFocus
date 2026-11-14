@@ -10,9 +10,19 @@ export const FORECAST_TARGET = 70;
 export function useForecast(state: AppState, weeklyHours: number) {
   return useMemo(() => {
     if (!state.roadmap) return null;
-    const done = new Set(Object.values(state.progress).filter((p) => p.status === 'done').map((p) => p.key));
-    const points = forecastReadiness(state.profile, state.evidence, state.profile.targetRoleId, state.roadmap.milestones, done, weeklyHours);
+    const done = new Set(
+      Object.values(state.progress)
+        .filter((p) => p.status === 'done')
+        .map((p) => p.key),
+    );
+    const points = forecastReadiness(
+      state.profile,
+      state.evidence,
+      state.profile.targetRoleId,
+      state.roadmap.milestones,
+      done,
+      weeklyHours,
+    );
     return { points, toTarget: weeksToReach(points, FORECAST_TARGET), final: points[points.length - 1] };
   }, [state, weeklyHours]);
 }
-

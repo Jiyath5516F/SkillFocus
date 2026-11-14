@@ -11,14 +11,26 @@ Rules:
 - For "what if I switch role" questions, use the roleComparisons data in the snapshot.
 - Be concise: at most ~150 words, short paragraphs or bullets, end with one concrete next step.`;
 
-export async function mentorReply(snapshot: unknown, history: { role: 'user' | 'assistant'; content: string }[]): Promise<LLMResult<string>> {
-  return text({ system: `${PERSONA}\n\nLEARNER SNAPSHOT (JSON):\n${JSON.stringify(snapshot)}`, messages: history, maxTokens: 3000 });
+export async function mentorReply(
+  snapshot: unknown,
+  history: { role: 'user' | 'assistant'; content: string }[],
+): Promise<LLMResult<string>> {
+  return text({
+    system: `${PERSONA}\n\nLEARNER SNAPSHOT (JSON):\n${JSON.stringify(snapshot)}`,
+    messages: history,
+    maxTokens: 3000,
+  });
 }
 
 export async function mentorSummary(snapshot: unknown, event: string): Promise<LLMResult<string>> {
   return text({
     system: `${PERSONA}\n\nLEARNER SNAPSHOT (JSON):\n${JSON.stringify(snapshot)}`,
-    messages: [{ role: 'user', content: `[System event — not typed by the learner] ${event}\nWrite a 2–3 sentence update for the learner: what changed, why, and the single next action.` }],
+    messages: [
+      {
+        role: 'user',
+        content: `[System event — not typed by the learner] ${event}\nWrite a 2–3 sentence update for the learner: what changed, why, and the single next action.`,
+      },
+    ],
     maxTokens: 2000,
     model: FAST_MODEL, // a 2–3 sentence update doesn't need the largest model
   });

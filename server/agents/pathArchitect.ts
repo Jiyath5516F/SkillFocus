@@ -6,9 +6,16 @@ import { structured, type LLMResult } from '../llm';
 import type { Slot } from '../roadmap';
 
 const Schema = z.object({
-  milestones: z.array(z.object({
-    key: z.string(), title: z.string(), reason: z.string(), resourceIds: z.array(z.string()), exercise: z.string(), effortHours: z.number(),
-  })),
+  milestones: z.array(
+    z.object({
+      key: z.string(),
+      title: z.string(),
+      reason: z.string(),
+      resourceIds: z.array(z.string()),
+      exercise: z.string(),
+      effortHours: z.number(),
+    }),
+  ),
   changeSummary: z.string(),
 });
 export type PathOutput = z.infer<typeof Schema>;
@@ -26,17 +33,39 @@ changeSummary: 1–2 sentences describing what this roadmap version changes and 
 Use the Skill Intelligence findings to personalise reasons and exercises (build on strengths, address weaknesses).
 Never invent resources, URLs, completed courses or scores.`;
 
-export async function runPathArchitect(profile: Profile, twin: TwinResult, slots: Slot[], context: { trigger: string; diagnosis?: string | null; previousKeys?: string[]; insights?: unknown }): Promise<LLMResult<PathOutput>> {
+export async function runPathArchitect(
+  profile: Profile,
+  twin: TwinResult,
+  slots: Slot[],
+  context: { trigger: string; diagnosis?: string | null; previousKeys?: string[]; insights?: unknown },
+): Promise<LLMResult<PathOutput>> {
   const input = {
     targetRole: ROLE_BY_ID[twin.roleId].title,
-    learner: { background: profile.background, interests: profile.interests, weeklyHours: profile.weeklyHours, projects: profile.projects.map((p) => p.name), strengths: twin.strengths.map(skillName) },
+    learner: {
+      background: profile.background,
+      interests: profile.interests,
+      weeklyHours: profile.weeklyHours,
+      projects: profile.projects.map((p) => p.name),
+      strengths: twin.strengths.map(skillName),
+    },
     trigger: context.trigger,
     assessmentDiagnosis: context.diagnosis ?? null,
     skillIntelligence: context.insights ?? null,
     previousRoadmapKeys: context.previousKeys ?? [],
     slots: slots.map((s) => ({
-      key: s.key, skill: skillName(s.skillId), kind: s.kind, concept: s.conceptLabel ?? null, targetLevel: LEVEL_LABELS[s.targetLevel], priority: s.priority,
-      candidateResources: s.candidates.map((c) => ({ id: c.id, title: c.title, provider: c.provider, kind: c.kind, hours: c.hours })),
+      key: s.key,
+      skill: skillName(s.skillId),
+      kind: s.kind,
+      concept: s.conceptLabel ?? null,
+      targetLevel: LEVEL_LABELS[s.targetLevel],
+      priority: s.priority,
+      candidateResources: s.candidates.map((c) => ({
+        id: c.id,
+        title: c.title,
+        provider: c.provider,
+        kind: c.kind,
+        hours: c.hours,
+      })),
     })),
   };
   return structured({ system: SYSTEM, user: JSON.stringify(input), schema: Schema, maxTokens: 12000 });

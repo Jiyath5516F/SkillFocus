@@ -23,15 +23,31 @@ Rules:
 - summary: 2 sentences, plain language, addressed to the learner as "you".
 - Never invent certifications, projects, scores or experience that are not in the input.`;
 
-export async function runSkillIntelligence(profile: Profile, attempts: AssessmentAttempt[]): Promise<LLMResult<SkillIntelOutput>> {
+export async function runSkillIntelligence(
+  profile: Profile,
+  attempts: AssessmentAttempt[],
+): Promise<LLMResult<SkillIntelOutput>> {
   const input = {
     catalogSkillIds: [...SKILLS, ...(profile.customSkills ?? [])].map((s) => ({ id: s.id, name: s.name })),
     learner: {
-      background: profile.background, currentRole: profile.currentRole, interests: profile.interests,
-      selfReportedSkills: profile.skills.map((s) => ({ skill: SKILL_BY_ID[s.skillId]?.name ?? s.skillId, skillId: s.skillId, selfLevel: s.selfLevel })),
-      certifications: profile.certifications, projects: profile.projects,
+      background: profile.background,
+      currentRole: profile.currentRole,
+      interests: profile.interests,
+      selfReportedSkills: profile.skills.map((s) => ({
+        skill: SKILL_BY_ID[s.skillId]?.name ?? s.skillId,
+        skillId: s.skillId,
+        selfLevel: s.selfLevel,
+      })),
+      certifications: profile.certifications,
+      projects: profile.projects,
     },
-    assessmentHistory: attempts.slice(0, 5).map((a) => ({ skillId: a.skillId, scorePercent: a.score, verifiedLevel: a.verifiedLevel, weakConcepts: a.weakConcepts, date: a.createdAt })),
+    assessmentHistory: attempts.slice(0, 5).map((a) => ({
+      skillId: a.skillId,
+      scorePercent: a.score,
+      verifiedLevel: a.verifiedLevel,
+      weakConcepts: a.weakConcepts,
+      date: a.createdAt,
+    })),
     levelScale: '0 None, 1 Basic, 2 Working, 3 Proficient, 4 Advanced',
   };
   return structured({ system: SYSTEM, user: `Analyze this learner:\n${JSON.stringify(input)}`, schema: Schema });
@@ -39,12 +55,17 @@ export async function runSkillIntelligence(profile: Profile, attempts: Assessmen
 
 /** Keep only links whose skill exists and whose evidence name matches a real certification/project. */
 export function validLinks(out: SkillIntelOutput, profile: Profile) {
-  const names = [...profile.certifications.map((c) => c.name), ...profile.projects.map((p) => p.name)].map((n) => n.toLowerCase().trim());
+  const names = [...profile.certifications.map((c) => c.name), ...profile.projects.map((p) => p.name)].map((n) =>
+    n.toLowerCase().trim(),
+  );
   const seen = new Set<string>();
-  return out.links.filter((l) => {
-    const key = `${l.skillId}|${l.evidenceName.toLowerCase().trim()}`;
-    if (!SKILL_BY_ID[l.skillId] || !names.includes(l.evidenceName.toLowerCase().trim()) || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  }).slice(0, 10);
+  return out.links
+    .filter((l) => {
+      const key = `${l.skillId}|${l.evidenceName.toLowerCase().trim()}`;
+      if (!SKILL_BY_ID[l.skillId] || !names.includes(l.evidenceName.toLowerCase().trim()) || seen.has(key))
+        return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 10);
 }

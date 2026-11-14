@@ -1,6 +1,13 @@
 // Deterministic roadmap structure: slot order (prerequisites + remediation placement), templates, assembly.
 import { LEVEL_LABELS, RESOURCES, ROLE_BY_ID, SKILL_BY_ID, skillName } from '../shared/catalog';
-import type { AssessmentAttempt, Milestone, MilestoneKind, RequirementResult, Resource, TwinResult } from '../shared/types';
+import type {
+  AssessmentAttempt,
+  Milestone,
+  MilestoneKind,
+  RequirementResult,
+  Resource,
+  TwinResult,
+} from '../shared/types';
 import { ASSESSMENTS } from './assessments';
 
 export interface Slot {
@@ -36,17 +43,30 @@ export function buildSlots(twin: TwinResult, attempts: AssessmentAttempt[]): Slo
     const req = twin.requirements.find((r) => r.skillId === skillId)!;
     const prereqs = (SKILL_BY_ID[skillId]?.prereqs ?? []).filter((p) => role.requirements.some((r) => r.skillId === p));
     slots.push({
-      key: `learn:${skillId}`, skillId, kind: 'learn', targetLevel: req.required, prerequisites: prereqs,
-      candidates: RESOURCES.filter((r) => r.skillId === skillId && !r.concepts), impact: req.impact, priority: req.priority,
+      key: `learn:${skillId}`,
+      skillId,
+      kind: 'learn',
+      targetLevel: req.required,
+      prerequisites: prereqs,
+      candidates: RESOURCES.filter((r) => r.skillId === skillId && !r.concepts),
+      impact: req.impact,
+      priority: req.priority,
     });
     // Targeted remediation goes right after the skill's learn milestone — i.e. before anything that depends on it.
     if (gapSet.has(skillId)) {
       for (const concept of weak[skillId] ?? []) {
         const specific = RESOURCES.filter((r) => r.skillId === skillId && r.concepts?.includes(concept));
         slots.push({
-          key: `fix:${skillId}:${concept}`, skillId, kind: 'remediation', concept, conceptLabel: conceptLabel(skillId, concept),
-          targetLevel: req.required, prerequisites: [skillId],
-          candidates: specific.length ? specific : RESOURCES.filter((r) => r.skillId === skillId), impact: req.impact, priority: 'high',
+          key: `fix:${skillId}:${concept}`,
+          skillId,
+          kind: 'remediation',
+          concept,
+          conceptLabel: conceptLabel(skillId, concept),
+          targetLevel: req.required,
+          prerequisites: [skillId],
+          candidates: specific.length ? specific : RESOURCES.filter((r) => r.skillId === skillId),
+          impact: req.impact,
+          priority: 'high',
         });
       }
     }
@@ -58,21 +78,44 @@ export function templateMilestone(s: Slot): Milestone {
   const chosen = s.candidates.slice(0, 2);
   const name = skillName(s.skillId);
   return {
-    key: s.key, skillId: s.skillId, kind: s.kind, concept: s.concept,
-    title: s.kind === 'learn' ? `${name}: reach ${LEVEL_LABELS[s.targetLevel]} level` : `Remediate ${name}: ${s.conceptLabel}`,
-    reason: s.kind === 'learn'
-      ? `${s.priority[0].toUpperCase()}${s.priority.slice(1)} priority — mastering it adds up to ${s.impact} readiness points.`
-      : `Your latest ${name} assessment showed a gap in ${s.conceptLabel}.`,
+    key: s.key,
+    skillId: s.skillId,
+    kind: s.kind,
+    concept: s.concept,
+    title:
+      s.kind === 'learn'
+        ? `${name}: reach ${LEVEL_LABELS[s.targetLevel]} level`
+        : `Remediate ${name}: ${s.conceptLabel}`,
+    reason:
+      s.kind === 'learn'
+        ? `${s.priority[0].toUpperCase()}${s.priority.slice(1)} priority — mastering it adds up to ${s.impact} readiness points.`
+        : `Your latest ${name} assessment showed a gap in ${s.conceptLabel}.`,
     prerequisites: s.prerequisites,
     resourceIds: chosen.map((r) => r.id),
-    exercise: s.kind === 'learn' ? SKILL_BY_ID[s.skillId]?.defaultExercise ?? 'Build a small project using this skill.' : `Write 3 small snippets that exercise ${s.conceptLabel}, predict their output, then verify by running them.`,
-    effortHours: Math.max(1, Math.min(40, chosen.reduce((h, r) => h + r.hours, 0))),
+    exercise:
+      s.kind === 'learn'
+        ? (SKILL_BY_ID[s.skillId]?.defaultExercise ?? 'Build a small project using this skill.')
+        : `Write 3 small snippets that exercise ${s.conceptLabel}, predict their output, then verify by running them.`,
+    effortHours: Math.max(
+      1,
+      Math.min(
+        40,
+        chosen.reduce((h, r) => h + r.hours, 0),
+      ),
+    ),
     targetLevel: s.targetLevel,
     authoredBy: 'rule-based',
   };
 }
 
-export interface AIMilestone { key: string; title: string; reason: string; resourceIds: string[]; exercise: string; effortHours: number }
+export interface AIMilestone {
+  key: string;
+  title: string;
+  reason: string;
+  resourceIds: string[];
+  exercise: string;
+  effortHours: number;
+}
 
 /** Merge AI-authored content into the deterministic slot order; reject anything outside the slot's candidate set. */
 export function assemble(slots: Slot[], ai: AIMilestone[] | null): Milestone[] {
@@ -89,7 +132,9 @@ export function assemble(slots: Slot[], ai: AIMilestone[] | null): Milestone[] {
       reason: m.reason.trim().slice(0, 400) || base.reason,
       resourceIds: ids.length ? ids : base.resourceIds,
       exercise: m.exercise.trim().slice(0, 500) || base.exercise,
-      effortHours: Number.isFinite(m.effortHours) ? Math.max(1, Math.min(80, Math.round(m.effortHours))) : base.effortHours,
+      effortHours: Number.isFinite(m.effortHours)
+        ? Math.max(1, Math.min(80, Math.round(m.effortHours)))
+        : base.effortHours,
       authoredBy: 'ai',
     };
   });

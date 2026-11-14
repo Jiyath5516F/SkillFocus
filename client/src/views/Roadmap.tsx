@@ -36,8 +36,8 @@ export function Roadmap() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Learning roadmap <span className="text-slate-500">v{rev.version}</span></h1>
-          <p className="mt-1 text-sm text-slate-500">{rev.trigger} · {fmtDate(rev.createdAt)}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Learning roadmap <span className="text-white/60">v{rev.version}</span></h1>
+          <p className="mt-1 text-sm text-white/60">{rev.trigger} · {fmtDate(rev.createdAt)}</p>
         </div>
         <div className="flex items-center gap-2">
           {forRole.length > 1 && (
@@ -50,41 +50,41 @@ export function Roadmap() {
 
       <Card>
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-          <div><span className="font-semibold text-slate-900">{done}/{rev.milestones.length}</span> <span className="text-slate-500">milestones done</span></div>
-          <div><span className="font-semibold text-slate-900">~{hours}h</span> <span className="text-slate-500">remaining · ~{Math.ceil(hours / Math.max(1, state.profile.weeklyHours))} weeks at {state.profile.weeklyHours}h/week</span></div>
-          <div className="h-2 min-w-40 flex-1 rounded-full bg-paper-deep"><div className="h-2 rounded-full bg-brand-600" style={{ width: `${(done / Math.max(1, rev.milestones.length)) * 100}%` }} /></div>
+          <div><span className="font-semibold text-white">{done}/{rev.milestones.length}</span> <span className="text-white/60">milestones done</span></div>
+          <div><span className="font-semibold text-white">~{hours}h</span> <span className="text-white/60">remaining · ~{Math.ceil(hours / Math.max(1, state.profile.weeklyHours))} weeks at {state.profile.weeklyHours}h/week</span></div>
+          <div className="h-2 min-w-40 flex-1 rounded-full bg-white/10"><div className="h-2 rounded-full bg-indigo-400" style={{ width: `${(done / Math.max(1, rev.milestones.length)) * 100}%` }} /></div>
         </div>
-        <p className="mt-3 text-sm text-slate-600">{rev.changeSummary}</p>
+        <p className="mt-3 text-sm text-white/70">{rev.changeSummary}</p>
         {rev.diff && (rev.diff.added.length > 0 || rev.diff.removed.length > 0 || rev.diff.moved.length > 0) && (
-          <div className="mt-3 flex flex-wrap gap-2 border-t border-stone-100 pt-3 text-xs">
-            <span className="text-slate-500">Changes vs v{rev.version - 1}:</span>
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-white/10 pt-3 text-xs">
+            <span className="text-white/60">Changes vs v{rev.version - 1}:</span>
             {rev.diff.added.length > 0 && <Badge tone="emerald">{rev.diff.added.length} added</Badge>}
             {rev.diff.removed.length > 0 && <Badge tone="rose">{rev.diff.removed.length} removed: {rev.diff.removed.map(milestoneLabel).join(', ')}</Badge>}
             {rev.diff.moved.length > 0 && <Badge tone="amber">{rev.diff.moved.length} reordered</Badge>}
           </div>
         )}
-        <p className="mt-3 text-xs text-slate-500">Marking a milestone done records a <em>claim</em>; it counts as unverified until you pass an assessment.</p>
+        <p className="mt-3 text-xs text-white/60">Marking a milestone done records a <em>claim</em>; it counts as unverified until you pass an assessment.</p>
       </Card>
 
-      {!isCurrent && <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">You're viewing an earlier version (read-only).</div>}
+      {!isCurrent && <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm text-amber-300">You're viewing an earlier version (read-only).</div>}
 
       <ol className="space-y-3">
         {rev.milestones.map((m, i) => {
           const status = state.progress[m.key]?.status ?? 'todo';
           const isNew = rev.diff?.added.includes(m.key);
           return (
-            <li key={m.key} className={`rounded-xl border bg-card p-5 ${m.kind === 'remediation' ? 'border-rose-200' : 'border-line'} ${status === 'done' ? 'border-emerald-200' : ''}`}>
+            <li key={m.key} className={`rounded-xl border bg-white/5 p-5 ${m.kind === 'remediation' ? 'border-rose-400/30' : 'border-white/10'} ${status === 'done' ? 'border-emerald-400/30' : ''}`}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex min-w-0 gap-3">
-                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${status === 'done' ? 'bg-emerald-700 text-white' : 'bg-paper-deep text-slate-600'}`}>{status === 'done' ? '✓' : i + 1}</div>
+                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${status === 'done' ? 'bg-emerald-500 text-white' : 'bg-white/10 text-white/70'}`}>{status === 'done' ? '✓' : i + 1}</div>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <h3 className="font-semibold text-slate-900">{m.title}</h3>
+                      <h3 className="font-semibold text-white">{m.title}</h3>
                       {m.kind === 'remediation' ? <Badge tone="rose">Targeted remediation</Badge> : <Badge tone="brand">{skillName(m.skillId)} → {LEVEL_LABELS[m.targetLevel]}</Badge>}
                       {isNew && <Badge tone="emerald">New in v{rev.version}</Badge>}
                       <Badge tone={m.authoredBy === 'ai' ? 'violet' : 'amber'}>{m.authoredBy === 'ai' ? 'AI-personalised' : 'Rule-based'}</Badge>
                     </div>
-                    <p className="mt-1 text-sm text-slate-600">{m.reason}</p>
+                    <p className="mt-1 text-sm text-white/70">{m.reason}</p>
                   </div>
                 </div>
                 {isCurrent && (
@@ -93,20 +93,20 @@ export function Roadmap() {
               </div>
               <div className="mt-4 grid gap-4 pl-10 md:grid-cols-2">
                 <div>
-                  <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">Resources</div>
+                  <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-white/60">Resources</div>
                   <ul className="space-y-1.5">
                     {m.resourceIds.map((id) => RESOURCE_BY_ID[id]).filter(Boolean).map((r) => (
                       <li key={r.id} className="text-sm">
-                        <a href={r.url} target="_blank" rel="noreferrer" className="font-medium text-brand-800 hover:underline">{r.title} ↗</a>
-                        <span className="text-slate-500"> · {r.provider} · {r.kind} · ~{r.hours}h</span>
+                        <a href={r.url} target="_blank" rel="noreferrer" className="font-medium text-indigo-300 hover:underline">{r.title} ↗</a>
+                        <span className="text-white/60"> · {r.provider} · {r.kind} · ~{r.hours}h</span>
                       </li>
                     ))}
                   </ul>
                 </div>
                 <div>
-                  <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-500">Practical exercise</div>
-                  <p className="text-sm text-slate-700">{m.exercise}</p>
-                  <p className="mt-2 text-xs text-slate-500">Effort ~{m.effortHours}h{m.prerequisites.length ? ` · after: ${m.prerequisites.map(skillName).join(', ')}` : ''}</p>
+                  <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-white/60">Practical exercise</div>
+                  <p className="text-sm text-white/80">{m.exercise}</p>
+                  <p className="mt-2 text-xs text-white/60">Effort ~{m.effortHours}h{m.prerequisites.length ? ` · after: ${m.prerequisites.map(skillName).join(', ')}` : ''}</p>
                 </div>
               </div>
             </li>

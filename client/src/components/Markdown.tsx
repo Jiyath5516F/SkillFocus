@@ -5,7 +5,7 @@ function inline(text: string): ReactNode[] {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*)/g);
   return parts.map((p, i) => {
     if (p.startsWith('**') && p.endsWith('**') && p.length > 4) return <strong key={i} className="font-semibold">{p.slice(2, -2)}</strong>;
-    if (p.startsWith('`') && p.endsWith('`') && p.length > 2) return <code key={i} className="code-block rounded bg-paper-deep px-1 text-[0.9em]">{p.slice(1, -1)}</code>;
+    if (p.startsWith('`') && p.endsWith('`') && p.length > 2) return <code key={i} className="code-block rounded bg-white/10 px-1 text-[0.9em]">{p.slice(1, -1)}</code>;
     if (p.startsWith('*') && p.endsWith('*') && p.length > 2) return <em key={i}>{p.slice(1, -1)}</em>;
     return p;
   });

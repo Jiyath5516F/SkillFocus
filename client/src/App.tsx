@@ -103,16 +103,16 @@ export default function App() {
   if (loadError) {
     return (
       <div className="flex min-h-screen items-center justify-center p-6">
-        <div className="max-w-md rounded-xl border border-rose-200 bg-white p-6 text-center">
-          <p className="font-semibold text-slate-900">Mira can't load</p>
-          <p className="mt-1 text-sm text-slate-600">{loadError}</p>
+        <div className="max-w-md rounded-xl bg-white/5 p-6 text-center ring-1 ring-rose-400/30">
+          <p className="font-semibold text-white">Mira can't load</p>
+          <p className="mt-1 text-sm text-white/70">{loadError}</p>
           <Button className="mt-4" onClick={() => window.location.reload()}>Retry</Button>
         </div>
       </div>
     );
   }
   if (!state || !meta) {
-    return <div className="flex min-h-screen items-center justify-center gap-2 text-slate-500"><Spinner /> Loading Mira…</div>;
+    return <div className="flex min-h-screen items-center justify-center gap-2 text-white/60"><Spinner /> Loading Mira…</div>;
   }
 
   const busy = activeRun?.status === 'running';
@@ -121,29 +121,29 @@ export default function App() {
 
   return (
     <AppCtx.Provider value={ctx}>
-      <a href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }} className="sr-only z-50 rounded bg-white px-3 py-2 text-sm text-brand-800 shadow focus:not-sr-only focus:fixed focus:top-2 focus:left-2">Skip to content</a>
+      <a href="#main" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }} className="sr-only z-50 rounded bg-neutral-900 px-3 py-2 text-sm text-white shadow focus:not-sr-only focus:fixed focus:top-2 focus:left-2">Skip to content</a>
       <div className="min-h-screen lg:flex">
-        <aside className="border-b border-gray-200 bg-white lg:fixed lg:inset-y-0 lg:w-64 lg:border-r lg:border-b-0">
+        <aside className="border-b border-white/10 bg-black/40 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:w-64 lg:border-r lg:border-b-0">
           <div className="flex items-center justify-between px-5 py-4 lg:block">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-base font-bold text-white" aria-hidden>M</div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500 text-base font-bold text-white" aria-hidden>M</div>
               <div>
-                <div className="text-lg font-semibold leading-tight text-gray-900">Mira</div>
-                <div className="text-xs leading-tight text-gray-500">Career learning, proven</div>
+                <div className="text-lg font-semibold leading-tight text-white">Mira</div>
+                <div className="text-xs leading-tight text-white/60">Career learning, proven</div>
               </div>
             </div>
           </div>
           <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:pb-0" aria-label="Main">
             {VIEWS.map((v) => (
               <button key={v.id} onClick={() => go(v.id)} aria-current={view === v.id ? 'page' : undefined}
-                className={`shrink-0 rounded-md px-3 py-2 text-left text-sm font-semibold transition-colors ${view === v.id ? 'bg-gray-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600'}`}>
+                className={`shrink-0 rounded-md px-3 py-2 text-left text-sm font-semibold transition-colors ${view === v.id ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/5 hover:text-white'}`}>
                 {v.label}
               </button>
             ))}
           </nav>
           <div className="hidden px-5 pt-6 lg:block">
-            <div className="rounded-lg bg-gray-50 p-3 text-xs text-gray-600 ring-1 ring-gray-900/5">
-              <div className="font-semibold text-gray-900">{state.profile.name}</div>
+            <div className="rounded-lg bg-white/5 p-3 text-xs text-white/70 ring-1 ring-white/10">
+              <div className="font-semibold text-white">{state.profile.name}</div>
               <div>{state.profile.background}</div>
               <div className="mt-2 flex items-center gap-1.5">
                 <span className={`h-2 w-2 rounded-full ${state.aiConfigured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
@@ -154,28 +154,28 @@ export default function App() {
         </aside>
 
         <div className="flex-1 lg:pl-64">
-          <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-white/90 px-4 py-3 backdrop-blur sm:px-8">
+          <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 bg-black/50 px-4 py-3 backdrop-blur-xl sm:px-8">
             <div className="flex min-w-0 items-center gap-2 text-sm">
-              <span className="text-slate-500">Goal</span>
-              <span className="font-semibold text-slate-900">{role.title}</span>
+              <span className="text-white/60">Goal</span>
+              <span className="font-semibold text-white">{role.title}</span>
               <Badge tone="brand">{state.twin.readiness}% ready (est.)</Badge>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="secondary" onClick={() => setDrawer(true)}>
-                {busy ? <><span className="pulse-dot h-2 w-2 rounded-full bg-brand-600" /> Agents working…</> : 'Agent activity'}
+                {busy ? <><span className="pulse-dot h-2 w-2 rounded-full bg-indigo-400" /> Agents working…</> : 'Agent activity'}
               </Button>
             </div>
           </header>
 
           {!state.aiConfigured && (
-            <div className="mx-4 mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 sm:mx-8">
+            <div className="mx-4 mt-4 rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-sm text-amber-300 sm:mx-8">
               AI is not configured on the server — showing rule-based results only. Numbers are unaffected (they are always deterministic).
             </div>
           )}
 
           <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 focus:outline-none sm:px-8">
             {view === 'overview' && <Overview />}
-            {view === 'twin' && <Suspense fallback={<div className="flex items-center gap-2 text-slate-500"><Spinner /> Loading Career Twin…</div>}><Twin /></Suspense>}
+            {view === 'twin' && <Suspense fallback={<div className="flex items-center gap-2 text-white/60"><Spinner /> Loading Career Twin…</div>}><Twin /></Suspense>}
             {view === 'roadmap' && <Roadmap />}
             {view === 'assessments' && <Assessments />}
             {view === 'mentor' && <Mentor />}
@@ -188,7 +188,7 @@ export default function App() {
       <AgentDrawer open={drawer} onClose={() => setDrawer(false)} activeRun={activeRun} refreshKey={refreshKey} />
 
       {toast && (
-        <div role="status" className={`fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg px-4 py-2.5 text-sm shadow-lg ${toast.tone === 'error' ? 'bg-rose-700 text-white' : 'bg-slate-900 text-white'}`}>
+        <div role="status" className={`fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg px-4 py-2.5 text-sm shadow-lg ${toast.tone === 'error' ? 'bg-rose-500/90 text-white' : 'bg-neutral-800 text-white ring-1 ring-white/10'}`}>
           {toast.msg}
         </div>
       )}

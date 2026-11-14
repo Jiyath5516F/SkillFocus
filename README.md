@@ -171,7 +171,7 @@ The acceptance tests cover the three required scenarios:
 
 ## Accessibility
 
-- **Headless UI** provides the accessible behaviour for interactive primitives: the Agent activity panel is a modal `Dialog` (focus trap, Escape, `aria-modal`, scroll lock) and quiz answers use `RadioGroup` (roving focus, arrow keys). They are styled in the Tailwind/headlessui.com look (Inter, gray neutrals, indigo accent): `Dialog`, `RadioGroup`, `Listbox`, `Disclosure`, `Checkbox`, `Field`/`Input`/`Textarea`.
+- **Headless UI** provides the accessible behaviour for interactive primitives: the Agent activity panel is a modal `Dialog` (focus trap, Escape, `aria-modal`, scroll lock) and quiz answers use `RadioGroup` (roving focus, arrow keys). They are styled like the dark headlessui.com examples (black canvas with a purple/blue glow, translucent `white/5` surfaces, `white/10` rings, Inter): `Dialog`, `RadioGroup`, `Listbox`, `Disclosure`, `Checkbox`, `Field`/`Input`/`Textarea`.
 - Semantic landmarks, a skip-to-content link, and visible focus rings.
 - Labelled form controls; radio-group quizzes; `aria-pressed` on milestone status buttons; a live region in the chat.
 - Respects `prefers-reduced-motion`.

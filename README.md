@@ -158,7 +158,7 @@ The acceptance tests cover the three required scenarios:
 - **Sign up and sign in** pages. Passwords need at least 8 characters with a letter and a number. They are hashed with **scrypt** (Node `crypto`, a random 16-byte salt per user) and verified with `timingSafeEqual`.
 - **Sessions** use a random 256-bit token in an `HttpOnly`, `SameSite=Strict` cookie (also `Secure` over HTTPS behind the proxy) that expires after 7 days. Only the token's SHA-256 hash is stored. Sign out deletes the session on the server.
 - **Per-account isolation:** each account has its own SQLite database file, selected per request through `AsyncLocalStorage`, so a request can only reach its own learner's data. Every API route except `/health` and `/auth/*` requires a valid session.
-- **Brute-force and enumeration protection:** sign-in is rate-limited per IP and per email (10 attempts per 15 minutes) and sign-up per IP. Failed sign-ins return one generic message and always run one scrypt computation, so neither the message nor the timing reveals whether an account exists.
+- **Brute-force and enumeration protection:** sign-in is rate-limited per account (10 attempts per 15 minutes) and more generously per IP so a shared venue network isn't locked out; sign-up is limited per IP. Failed sign-ins return one generic message and always run one scrypt computation, so neither the message nor the timing reveals whether an account exists.
 
 **Application**
 

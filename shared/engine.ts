@@ -18,10 +18,10 @@ export const EVIDENCE_FACTOR = 0.9;
 /** Map an assessment percentage to a verified proficiency level. */
 export function scoreToLevel(score: number): number {
   if (score >= 90) return 4;
-  if (score >= 70) return 3;
-  if (score >= 40) return 2;
-  if (score >= 20) return 1;
-  return 0; // a near-zero score demonstrates no proficiency; it must never raise readiness
+  if (score >= 80) return 3;
+  if (score >= 60) return 2;
+  if (score >= 40) return 1;
+  return 0; // under 40% demonstrates nothing yet, so a failed quiz can never raise readiness
 }
 
 const round1 = (n: number) => Math.round(n * 10) / 10;

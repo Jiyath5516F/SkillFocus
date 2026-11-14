@@ -37,7 +37,7 @@ describe('grading', () => {
     const g = grade(js, answers);
     assert.equal(g.correct, 2);
     assert.equal(g.score, 25);
-    assert.equal(g.verifiedLevel, 1);
+    assert.equal(g.verifiedLevel, 0, '25% demonstrates nothing yet');
     assert.deepEqual([...g.weakConcepts].sort(), ['arrays_objects', 'async', 'closures', 'dom']);
   });
   it('every assessment has a valid answer key and concept labels', () => {

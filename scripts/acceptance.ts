@@ -127,8 +127,8 @@ async function test2() {
   const s = await call<AppState>('/state');
   const js = s.twin.requirements.find((r) => r.skillId === 'javascript')!;
   check(
-    js.confidence === 'assessed' && js.effective === 1,
-    'JS estimate is now assessment-backed at level 1',
+    js.confidence === 'assessed' && js.effective === 0,
+    'JS estimate is now assessment-backed: not yet demonstrated (0)',
     `effective ${js.effective}, ${js.confidence}`,
   );
   check(

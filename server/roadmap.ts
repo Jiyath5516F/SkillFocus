@@ -1,4 +1,5 @@
 // Deterministic roadmap structure: slot order (prerequisites + remediation placement), templates, assembly.
+import { orderByPrereqs } from '../shared/engine';
 import { LEVEL_LABELS, RESOURCES, ROLE_BY_ID, SKILL_BY_ID, skillName } from '../shared/catalog';
 import type {
   AssessmentAttempt,
@@ -34,12 +35,21 @@ export function latestWeakConcepts(attempts: AssessmentAttempt[]): Record<string
   return out;
 }
 
-export function buildSlots(twin: TwinResult, attempts: AssessmentAttempt[]): Slot[] {
+/**
+ * Roadmap slots in prerequisite order. When the Career Matching Agent supplies a critical path, its priorities decide
+ * the order among skills that are ready to learn; prerequisites are always enforced.
+ */
+export function buildSlots(twin: TwinResult, attempts: AssessmentAttempt[], criticalPath: string[] = []): Slot[] {
   const role = ROLE_BY_ID[twin.roleId];
   const weak = latestWeakConcepts(attempts);
   const gapSet = new Set(twin.orderedGaps);
+  const priority: Record<string, number> = Object.fromEntries(twin.requirements.map((r) => [r.skillId, r.impact]));
+  criticalPath.forEach((id, i) => {
+    if (gapSet.has(id)) priority[id] = 1000 - i;
+  });
+  const order = criticalPath.length ? orderByPrereqs(twin.orderedGaps, priority) : twin.orderedGaps;
   const slots: Slot[] = [];
-  for (const skillId of twin.orderedGaps) {
+  for (const skillId of order) {
     const req = twin.requirements.find((r) => r.skillId === skillId)!;
     const prereqs = (SKILL_BY_ID[skillId]?.prereqs ?? []).filter((p) => role.requirements.some((r) => r.skillId === p));
     slots.push({

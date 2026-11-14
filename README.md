@@ -112,7 +112,7 @@ The **Agent activity** drawer shows each run as it executes: agent, status, time
 - Each account is one learner. A new account starts with the official sample scenario (Python, SQL, basic HTML → Full Stack Developer) under the user's own name, which they can edit or reset, so the full flow can be tried immediately.
 - Role requirements are **illustrative benchmarks**, not universal hiring standards.
 - Skills use a 0–4 scale (None, Basic, Working, Proficient, Advanced).
-- Score bands map to levels: <20% → None, 20–39% → Basic, 40–69% → Working, 70–89% → Proficient, ≥90% → Advanced. Any concept scored below 50% is "weak". After an attempt the learner sees an answer review, so retakes of the same assessment have a cooldown (`MIRA_RETAKE_COOLDOWN_MIN`, default 10 minutes), and a new attempt resets that skill's remediation progress.
+- Score bands map to levels: <40% → not yet demonstrated (0), 40–59% → Basic, 60–79% → Working, 80–89% → Proficient, ≥90% → Advanced, so a failed quiz can lower an unverified estimate but never raise readiness. Any concept scored below 50% is "weak". After an attempt the learner sees an answer review, so retakes of the same assessment have a cooldown (`MIRA_RETAKE_COOLDOWN_MIN`, default 10 minutes), and a new attempt resets that skill's remediation progress.
 - Assessments are short multiple-choice checks (JavaScript: 8 questions; SQL: 5; Python: 6) graded deterministically. No free-text AI grading.
 - The resources are a curated set of 48 well-known free resources. Links were checked when the catalog was built; a few sites block automated checks.
 

@@ -182,7 +182,6 @@ async function skillIntelligenceStep(ctx: RunCtx, mode: 'full' | 'reassess') {
 
 async function planFlow(ctx: RunCtx, o: PlanOpts) {
   let profile = store.getProfile()!;
-  const attempts = store.listAttempts();
   const before = o.before === undefined ? currentSnapshot() : o.before;
 
   // 1) Skill Intelligence Agent
@@ -214,38 +213,18 @@ async function planFlow(ctx: RunCtx, o: PlanOpts) {
         .join(' · '),
   );
 
-  // 3) Learning Path Architect — deterministic slot ordering (prerequisites + remediation placement)
-  const slots = ctx.det(
-    'Learning Path Architect',
-    `Order ${twin.orderedGaps.length} gaps by prerequisites; place remediation from latest assessments`,
-    () => buildSlots(twin, attempts),
-    (s) => `${s.length} slots: ${s.map((x) => x.key).join(', ')}`,
-  );
   const prev = store.latestRevision(profile.targetRoleId);
   const insights = store.getLearnerJson('insights'); // Skill Intelligence output, consumed downstream
 
-  // 4) Career Matching explanation ‖ Path Architect content (independent → parallel)
-  const [matching, path] = await Promise.all([
-    ctx.llm(
-      'Career Matching',
-      `Explain ${twin.orderedGaps.length} gaps at readiness ${twin.readiness}% · uses Skill Intelligence findings`,
-      () => runCareerMatching(profile, twin, insights),
-      (d) => d.headline,
-    ),
-    ctx.llm(
-      'Learning Path Architect',
-      `${slots.length} slots · trigger: ${o.trigger}${o.diagnosis ? ' · with assessment diagnosis' : ''}`,
-      () =>
-        runPathArchitect(profile, twin, slots, {
-          trigger: o.trigger,
-          diagnosis: o.diagnosis,
-          previousKeys: prev?.milestones.map((m) => m.key),
-          insights,
-        }),
-      (d) => `${d.milestones.length} milestones · ${d.changeSummary}`,
-    ),
-  ]);
-  if (matching) store.setLearnerJson('matching', { ...sanitizeMatching(matching, twin), alternatives });
+  // 3) Career Matching Agent decides priorities (critical path) from the gaps and Skill Intelligence findings
+  const matching = await ctx.llm(
+    'Career Matching',
+    `Prioritise ${twin.orderedGaps.length} gaps at readiness ${twin.readiness}% · uses Skill Intelligence findings`,
+    () => runCareerMatching(profile, twin, insights),
+    (d) => `${d.headline} · critical path: ${d.criticalPath.map(skillName).join(' → ')}`,
+  );
+  const decided = matching ? sanitizeMatching(matching, twin) : null;
+  if (decided) store.setLearnerJson('matching', { ...decided, alternatives });
   else {
     ctx.fallback('Career Matching', 'AI unavailable', 'Rule-based critical path from impact and prerequisites.');
     store.setLearnerJson('matching', {
@@ -255,6 +234,29 @@ async function planFlow(ctx: RunCtx, o: PlanOpts) {
       alternatives,
     });
   }
+
+  // 4) Learning Path Architect orders the roadmap by that critical path (prerequisites enforced) and writes the plan
+  const criticalPath = decided?.criticalPath ?? [];
+  const slots = ctx.det(
+    'Learning Path Architect',
+    criticalPath.length
+      ? `Order gaps by Career Matching's critical path (${criticalPath.map(skillName).join(' → ')}), prerequisites enforced; place remediation`
+      : `Order ${twin.orderedGaps.length} gaps by prerequisites and impact; place remediation from latest assessments`,
+    () => buildSlots(twin, store.listAttempts(), criticalPath),
+    (s) => `${s.length} slots: ${s.map((x) => x.key).join(', ')}`,
+  );
+  const path = await ctx.llm(
+    'Learning Path Architect',
+    `${slots.length} slots · trigger: ${o.trigger}${o.diagnosis ? ' · with assessment diagnosis' : ''}`,
+    () =>
+      runPathArchitect(profile, twin, slots, {
+        trigger: o.trigger,
+        diagnosis: o.diagnosis,
+        previousKeys: prev?.milestones.map((m) => m.key),
+        insights,
+      }),
+    (d) => `${d.milestones.length} milestones · ${d.changeSummary}`,
+  );
   if (!path)
     ctx.fallback('Learning Path Architect', 'AI unavailable', 'Rule-based milestones from curated catalog templates.');
 
@@ -349,8 +351,27 @@ export function startAssessmentRun(
     ]);
     const below = requiredLevel !== null && attempt.verifiedLevel < requiredLevel;
     const was = before.levels[def.skillId];
-    const change = `${skillName(def.skillId)}: ${was === undefined || was === 0 ? 'unclaimed' : `estimated ${was}`} → verified ${LEVEL_LABELS[attempt.verifiedLevel]}${requiredLevel === null ? '' : ` (needs ${LEVEL_LABELS[requiredLevel]})`}`;
-    const remediation = below && attempt.weakConcepts.length > 0; // buildSlots adds fix:<skill>:<concept> exactly in this case
+    const verified = attempt.verifiedLevel ? `verified ${LEVEL_LABELS[attempt.verifiedLevel]}` : 'not yet demonstrated';
+    const change = `${skillName(def.skillId)}: ${was === undefined || was === 0 ? 'unclaimed' : `estimated ${was}`} → ${verified}${requiredLevel === null ? '' : ` (needs ${LEVEL_LABELS[requiredLevel]})`}`;
+    // The Assessment & Progress Agent may add concepts where a wrong answer reveals a misconception worth practising.
+    // Validated: only real concepts of this assessment that the learner actually got wrong.
+    const agentConcepts = (diag?.concepts ?? [])
+      .map((c) => c.concept)
+      .filter((c) => def.concepts[c] && attempt.questionResults.some((r) => r.concept === c && !r.correct));
+    const weakConcepts = [...new Set([...attempt.weakConcepts, ...agentConcepts])];
+    const addedByAgent = weakConcepts.filter((c) => !attempt.weakConcepts.includes(c));
+    attempt = { ...attempt, weakConcepts };
+    store.updateAttempt(attempt);
+    ctx.det(
+      'Assessment & Progress',
+      'Validate agent-flagged misconceptions against the wrong answers',
+      () => addedByAgent,
+      (a) =>
+        a.length
+          ? `Agent added remediation for: ${a.map((c) => def.concepts[c]).join(', ')}`
+          : 'No extra concepts beyond the graded weak ones',
+    );
+    const remediation = below && weakConcepts.length > 0; // buildSlots adds fix:<skill>:<concept> exactly in this case
     if (diag) {
       const conceptNotes = diag.concepts
         .filter((c) => attempt.weakConcepts.includes(c.concept))

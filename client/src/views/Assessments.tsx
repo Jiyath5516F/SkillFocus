@@ -56,7 +56,10 @@ export function Assessments() {
               {latestFull.correct}/{latestFull.total} correct
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5">
-              <Badge tone="emerald">Verified level: {LEVEL_LABELS[latestFull.verifiedLevel]}</Badge>
+              <Badge tone="emerald">
+                Verified level:{' '}
+                {latestFull.verifiedLevel ? LEVEL_LABELS[latestFull.verifiedLevel] : 'not yet demonstrated'}
+              </Badge>
               {req !== undefined && (
                 <Badge tone={latestFull.verifiedLevel >= req ? 'emerald' : 'rose'}>
                   {role.title} needs {LEVEL_LABELS[req]}

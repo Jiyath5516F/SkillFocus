@@ -39,10 +39,11 @@ const ev = (skillId: string, source: Evidence['source'], level: number, createdA
 
 describe('scoreToLevel', () => {
   it('maps score bands to verified levels', () => {
-    assert.equal(scoreToLevel(0), 0, 'a near-zero score never raises readiness');
-    assert.equal(scoreToLevel(25), 1);
-    assert.equal(scoreToLevel(40), 2);
-    assert.equal(scoreToLevel(70), 3);
+    assert.equal(scoreToLevel(0), 0);
+    assert.equal(scoreToLevel(25), 0, 'a failed quiz demonstrates nothing yet, so it can never raise readiness');
+    assert.equal(scoreToLevel(45), 1);
+    assert.equal(scoreToLevel(70), 2);
+    assert.equal(scoreToLevel(85), 3);
     assert.equal(scoreToLevel(95), 4);
   });
 });
@@ -77,6 +78,18 @@ describe('estimateSkill', () => {
   });
   it('returns zero for unknown skills', () => {
     assert.equal(estimateSkill('react', profile, []).effective, 0);
+  });
+});
+
+describe('failed assessments', () => {
+  it('a failed quiz on an unclaimed skill does not raise readiness', () => {
+    const base = computeTwin(profile, [], 'fullstack').readiness;
+    const after = computeTwin(
+      profile,
+      [ev('javascript', 'assessment', scoreToLevel(25), '2026-01-02T00:00:00.000Z')],
+      'fullstack',
+    ).readiness;
+    assert.equal(after, base);
   });
 });
 

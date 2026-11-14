@@ -15,7 +15,7 @@ const SYSTEM = `You are the Assessment & Progress Agent in Mira.
 Answers were already graded deterministically against an answer key; the score is final — do not re-grade or change it.
 From the wrong answers, infer the most likely misconceptions.
 - diagnosis: 2 sentences addressed to the learner ("you"), honest but encouraging.
-- concepts: one entry per weak concept ID provided (use the exact concept IDs), with the likely misconception and one concrete practice tip.
+- concepts: one entry per weak concept ID provided, plus any other concept from conceptLabels where a wrong answer reveals a misconception worth practising (use exact concept IDs, most important first), each with the likely misconception and one concrete practice tip. You decide this remediation focus; it is applied only to concepts the learner actually answered wrongly.
 - focus: one sentence telling the Learning Path Architect what remediation should target.`;
 
 export async function runAssessmentAgent(

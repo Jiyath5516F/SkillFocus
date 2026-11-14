@@ -189,7 +189,8 @@ export default function App() {
         </div>
       </div>
 
-      {view !== 'mentor' && <FloatingMira onOpenFull={() => go('mentor')} />}
+      {/* Hidden on the full chat page, and during assessments so answers stay the learner's own. */}
+      {view !== 'mentor' && view !== 'assessments' && <FloatingMira onOpenFull={() => go('mentor')} />}
 
       <AgentDrawer open={drawer} onClose={() => setDrawer(false)} activeRun={activeRun} refreshKey={refreshKey} />
 

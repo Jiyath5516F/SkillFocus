@@ -19,7 +19,7 @@ export function ProfileView() {
   const dirty = JSON.stringify(p) !== JSON.stringify(state.profile);
   const save = async () => {
     setSaving(true);
-    try { track((await api.saveProfile(p)).runId); notify('Profile saved — agents are re-analyzing.', 'info'); } catch (e) { notify((e as Error).message); } finally { setSaving(false); }
+    try { const { runId } = await api.saveProfile(p); if (runId) track(runId); notify('Profile saved — agents are re-analyzing.', 'info'); } catch (e) { notify((e as Error).message); } finally { setSaving(false); }
   };
   const changeGoal = async (roleId: string) => {
     try { track((await api.changeGoal(roleId)).runId); } catch (e) { notify((e as Error).message); }

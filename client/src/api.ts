@@ -37,7 +37,7 @@ export const api = {
   meta: () => req<Meta>('/meta'),
   state: () => req<AppState>('/state'),
   analyze: () => req<{ runId: number }>('/analyze', { method: 'POST' }),
-  saveProfile: (p: Profile) => req<{ runId: number }>('/profile', { method: 'PUT', body: JSON.stringify(p) }),
+  saveProfile: (p: Profile, analyze = true) => req<{ runId: number | null }>(`/profile${analyze ? '' : '?analyze=false'}`, { method: 'PUT', body: JSON.stringify(p) }),
   changeGoal: (roleId: string) => req<{ runId: number }>('/goal', { method: 'POST', body: JSON.stringify({ roleId }) }),
   assessment: (id: string) => req<PublicAssessment>(`/assessments/${id}`),
   submit: (id: string, answers: Record<string, number | null>) => req<{ attempt: AssessmentAttempt; runId: number }>(`/assessments/${id}/submit`, { method: 'POST', body: JSON.stringify({ answers }) }),

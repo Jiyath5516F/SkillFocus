@@ -16,6 +16,7 @@ export const DEMO_PROFILE: Profile = {
   interests: 'Building web apps for student communities',
   targetRoleId: 'fullstack',
   weeklyHours: 8,
+  onboarded: true,
 };
 
 /** Resets the current user's data to the official sample scenario (Python, SQL, basic HTML → Full Stack). */
@@ -24,4 +25,11 @@ export function seedDemo(force = false, name = DEMO_PROFILE.name) {
   resetAll();
   saveProfile({ ...DEMO_PROFILE, name });
   addMessage('assistant', 'summary', `Hi ${name.split(' ')[0]}, I'm Mira. Your profile starts with a sample scenario (Python, SQL, basic HTML) — edit it in Profile, or run an analysis and my agent team will map your skills against your Full Stack Developer goal.`);
+}
+
+/** A brand-new account: only the name is known; the setup wizard (or Profile) fills in the rest. */
+export function seedNewAccount(name: string) {
+  resetAll();
+  saveProfile({ name, background: '', currentRole: '', skills: [], certifications: [], projects: [], interests: '', targetRoleId: 'fullstack', weeklyHours: 6, onboarded: false });
+  addMessage('assistant', 'summary', `Welcome, ${name.split(' ')[0]}! I'm Mira. Tell me your goal and skills (or skip and add them later in Profile), and my agent team will build your evidence-based roadmap.`);
 }

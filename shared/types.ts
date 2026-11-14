@@ -62,6 +62,8 @@ export interface Profile {
   interests: string;
   targetRoleId: string;
   weeklyHours: number;
+  /** false only for new accounts that haven't finished (or skipped) the setup wizard. */
+  onboarded?: boolean;
 }
 
 export type EvidenceSource = 'milestone_claim' | 'project_link' | 'assessment';

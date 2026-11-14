@@ -15,7 +15,7 @@ import * as store from './db';
 import { countAnswered, grade } from './grading';
 import { aiConfigured, describeError, MODEL } from './llm';
 import { BusyError, currentSnapshot, startAnalyze, startAssessmentRun, startGoalChange } from './orchestrator';
-import { seedDemo } from './seed';
+import { seedDemo, seedNewAccount } from './seed';
 import { buildState, mentorSnapshot } from './state';
 
 const BASE = (process.env.MIRA_BASE_PATH || '').replace(/\/+$/, '');
@@ -71,7 +71,7 @@ api.post('/auth/signup', (req, res) => {
   if (tooManyAttempts([`signup:${req.ip}`], 40, 60 * 60_000)) return res.status(429).json({ error: 'Too many sign-ups from this network. Try again later.' });
   if (findUserByEmail(parsed.data.email)) return res.status(409).json({ error: 'An account with this email already exists. Sign in instead.' });
   const user = createUser(parsed.data.name, parsed.data.email, parsed.data.password);
-  store.runAsUser(user.id, () => seedDemo(true, user.name)); // starter profile so the full flow can be tried immediately
+  store.runAsUser(user.id, () => seedNewAccount(user.name)); // empty profile; the setup wizard collects the details
   setSessionCookie(req, res, createSession(user.id), BASE);
   res.status(201).json({ user: publicUser(user) });
 });
@@ -121,6 +121,7 @@ const ProfileSchema = z.object({
   interests: z.string().trim().max(300),
   targetRoleId: z.string(),
   weeklyHours: z.number().min(1).max(60),
+  onboarded: z.boolean().optional(),
 });
 
 function sendErr(res: Response, e: unknown) {
@@ -141,7 +142,8 @@ api.put('/profile', aiLimit, (req, res) => {
   try {
     if (store.activeRunId()) throw new BusyError(BUSY);
     store.saveProfile({ ...p, skills });
-    res.json({ runId: startAnalyze('profile_updated') });
+    // ?analyze=false saves without running the agents (e.g. "Skip for now" in the setup wizard).
+    res.json({ runId: req.query.analyze === 'false' ? null : startAnalyze('profile_updated') });
   } catch (e) { sendErr(res, e); }
 });
 

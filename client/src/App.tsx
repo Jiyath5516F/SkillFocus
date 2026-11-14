@@ -7,6 +7,7 @@ import { FloatingMira } from './components/FloatingMira';
 import { MiraAvatar } from './components/MiraAvatar';
 import { Badge, Button, Spinner } from './components/ui';
 import { Assessments } from './views/Assessments';
+import { Onboarding } from './views/Onboarding';
 import { Cohort } from './views/Cohort';
 import { Overview } from './views/Overview';
 import { ProfileView } from './views/Profile';
@@ -116,6 +117,10 @@ export default function App({ user, onSignOut }: { user: SessionUser; onSignOut:
   }
   if (!state || !meta) {
     return <div className="flex min-h-screen items-center justify-center gap-2 text-white/60"><Spinner /> Loading Mira…</div>;
+  }
+
+  if (state.profile.onboarded === false) {
+    return <Onboarding meta={meta} profile={state.profile} onDone={async (runId) => { await refresh(); if (runId) track(runId); }} />;
   }
 
   const busy = activeRun?.status === 'running';

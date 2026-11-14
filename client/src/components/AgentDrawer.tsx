@@ -23,8 +23,8 @@ function KindBadge({ s }: { s: AgentStep }) {
 
 function StatusIcon({ s }: { s: AgentStep['status'] }) {
   if (s === 'running') return <Spinner className="text-brand-700" />;
-  if (s === 'completed') return <span className="text-emerald-600" aria-label="completed">✓</span>;
-  if (s === 'failed') return <span className="text-rose-600" aria-label="failed">✕</span>;
+  if (s === 'completed') return <span className="text-emerald-700" aria-label="completed">✓</span>;
+  if (s === 'failed') return <span className="text-rose-700" aria-label="failed">✕</span>;
   return <span className="text-slate-500">–</span>;
 }
 

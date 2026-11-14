@@ -164,6 +164,7 @@ The acceptance tests cover the three required scenarios:
 
 - Matching and Path Architect run **in parallel**. Only the agents an event needs are invoked, with no agent loops, and effort is set to `low`.
 - Agents receive compact JSON summaries, never the full history.
+- Run history loads in two queries (runs, then all their steps), with indexes on the hot lookups.
 - Agent runs are asynchronous: the API returns a `runId` immediately and the UI polls one small endpoint.
 - The charting library loads only with Career Twin, cutting the initial JavaScript from 704 kB to 284 kB.
 
@@ -172,6 +173,7 @@ The acceptance tests cover the three required scenarios:
 - Semantic landmarks, a skip-to-content link, and visible focus rings.
 - Labelled form controls; radio-group quizzes; `aria-pressed` on milestone status buttons; a live region in the chat.
 - Respects `prefers-reduced-motion`.
+- An automated **axe-core** audit (WCAG 2 A/AA rules) reports **0 violations** across all seven views. Muted text and status colours were darkened so they meet the 4.5:1 contrast ratio.
 - Responsive layout down to mobile, and colour is never the only signal (labels and icons accompany it).
 
 ## Deployment

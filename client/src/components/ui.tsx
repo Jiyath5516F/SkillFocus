@@ -63,7 +63,7 @@ export function LevelBar({ effective, required, self }: { effective: number; req
   return (
     <div className="relative h-2.5 w-full rounded-full bg-paper-deep" aria-label={`Effective level ${effective} of required ${required}`}>
       {self !== undefined && self > effective && <div className="absolute inset-y-0 left-0 rounded-full bg-amber-200/70" style={{ width: pct(self) }} title={`Self-reported: ${self}`} />}
-      <div className={`absolute inset-y-0 left-0 rounded-full ${met ? 'bg-emerald-600' : 'bg-ink'}`} style={{ width: pct(effective) }} />
+      <div className={`absolute inset-y-0 left-0 rounded-full ${met ? 'bg-emerald-700' : 'bg-ink'}`} style={{ width: pct(effective) }} />
       <div className="absolute -top-1 h-[18px] w-0.5 rounded bg-slate-800" style={{ left: `calc(${pct(required)} - 1px)` }} title={`Required: ${LEVEL_LABELS[required]}`} />
     </div>
   );
@@ -103,7 +103,7 @@ export function Empty({ title, children, action }: { title: string; children?: R
 export function Delta({ from, to, suffix = '' }: { from: number; to: number; suffix?: string }) {
   const d = Math.round((to - from) * 10) / 10;
   if (d === 0) return <span className="text-slate-500">±0{suffix}</span>;
-  return <span className={d > 0 ? 'text-emerald-600' : 'text-rose-600'}>{d > 0 ? '▲' : '▼'} {Math.abs(d)}{suffix}</span>;
+  return <span className={d > 0 ? 'text-emerald-700' : 'text-rose-700'}>{d > 0 ? '▲' : '▼'} {Math.abs(d)}{suffix}</span>;
 }
 
 export const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -114,7 +114,7 @@ export function ProofMeter({ requirements }: { requirements: RequirementResult[]
   const pts = proofBreakdown(requirements);
   const proven = pts.provenShare;
   const seg = [
-    { key: 'assessed', label: 'Assessed', value: pts.assessed, cls: 'bg-emerald-600' },
+    { key: 'assessed', label: 'Assessed', value: pts.assessed, cls: 'bg-emerald-700' },
     { key: 'evidence', label: 'Evidence-backed', value: pts.evidence, cls: 'bg-ink' },
     { key: 'unverified', label: 'Unverified claims', value: pts.unverified, cls: 'bg-marigold' },
   ];

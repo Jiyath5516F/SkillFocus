@@ -72,7 +72,7 @@ export function ProfileView() {
                   <select aria-label={`${skillName(s.skillId)} level`} className="rounded-lg border border-line-strong px-2 py-1 text-sm" value={s.selfLevel} onChange={(e) => setP({ ...p, skills: p.skills.map((x) => (x.skillId === s.skillId ? { ...x, selfLevel: Number(e.target.value) } : x)) })}>
                     {LEVEL_LABELS.slice(1).map((l, i) => <option key={l} value={i + 1}>{l}</option>)}
                   </select>
-                  <button aria-label={`Remove ${skillName(s.skillId)}`} className="rounded px-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-600" onClick={() => setP({ ...p, skills: p.skills.filter((x) => x.skillId !== s.skillId) })}>✕</button>
+                  <button aria-label={`Remove ${skillName(s.skillId)}`} className="rounded px-1.5 text-slate-500 hover:bg-rose-50 hover:text-rose-700" onClick={() => setP({ ...p, skills: p.skills.filter((x) => x.skillId !== s.skillId) })}>✕</button>
                 </div>
               </li>
             ))}
@@ -92,7 +92,7 @@ export function ProfileView() {
               <li key={i} className="grid grid-cols-12 gap-2">
                 <input aria-label="Certification name" className={`${input} col-span-6`} value={c.name} onChange={(e) => setP({ ...p, certifications: p.certifications.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} />
                 <input aria-label="Issuer" className={`${input} col-span-4`} value={c.issuer} onChange={(e) => setP({ ...p, certifications: p.certifications.map((x, j) => (j === i ? { ...x, issuer: e.target.value } : x)) })} />
-                <button aria-label="Remove certification" className="col-span-2 rounded text-slate-500 hover:bg-rose-50 hover:text-rose-600" onClick={() => setP({ ...p, certifications: p.certifications.filter((_, j) => j !== i) })}>✕</button>
+                <button aria-label="Remove certification" className="col-span-2 rounded text-slate-500 hover:bg-rose-50 hover:text-rose-700" onClick={() => setP({ ...p, certifications: p.certifications.filter((_, j) => j !== i) })}>✕</button>
               </li>
             ))}
           </ul>
@@ -105,7 +105,7 @@ export function ProfileView() {
               <li key={i} className="space-y-1.5">
                 <div className="flex gap-2">
                   <input aria-label="Project name" className={input} value={pr.name} onChange={(e) => setP({ ...p, projects: p.projects.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })} />
-                  <button aria-label="Remove project" className="rounded px-2 text-slate-500 hover:bg-rose-50 hover:text-rose-600" onClick={() => setP({ ...p, projects: p.projects.filter((_, j) => j !== i) })}>✕</button>
+                  <button aria-label="Remove project" className="rounded px-2 text-slate-500 hover:bg-rose-50 hover:text-rose-700" onClick={() => setP({ ...p, projects: p.projects.filter((_, j) => j !== i) })}>✕</button>
                 </div>
                 <textarea aria-label="Project description" rows={2} className={input} value={pr.description} onChange={(e) => setP({ ...p, projects: p.projects.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)) })} />
               </li>

@@ -47,7 +47,7 @@ export function Assessments() {
             <ul className="space-y-2.5">
               {latestFull.conceptResults.map((c) => (
                 <li key={c.concept} className="text-sm">
-                  <div className="mb-1 flex justify-between"><span className="text-slate-800">{c.label}</span><span className={c.correct / c.total < 0.5 ? 'font-medium text-rose-600' : 'text-emerald-700'}>{c.correct}/{c.total}</span></div>
+                  <div className="mb-1 flex justify-between"><span className="text-slate-800">{c.label}</span><span className={c.correct / c.total < 0.5 ? 'font-medium text-rose-700' : 'text-emerald-700'}>{c.correct}/{c.total}</span></div>
                   <div className="h-2 rounded-full bg-paper-deep"><div className={`h-2 rounded-full ${c.correct / c.total < 0.5 ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${(c.correct / c.total) * 100}%` }} /></div>
                 </li>
               ))}
@@ -70,7 +70,7 @@ export function Assessments() {
               const r = latestFull.questionResults.find((x) => x.questionId === q.id)!;
               return (
                 <li key={q.id} className="text-sm">
-                  <div className="flex items-start gap-2"><span className={r.correct ? 'text-emerald-600' : 'text-rose-600'}>{r.correct ? '✓' : '✕'}</span><span className="font-medium text-slate-800">{i + 1}. {q.prompt}</span></div>
+                  <div className="flex items-start gap-2"><span className={r.correct ? 'text-emerald-700' : 'text-rose-700'}>{r.correct ? '✓' : '✕'}</span><span className="font-medium text-slate-800">{i + 1}. {q.prompt}</span></div>
                   <div className="ml-5 mt-1 text-slate-600">Your answer: {r.chosen !== null ? q.options[r.chosen] : '—'}{!r.correct && <> · Correct: <span className="font-medium text-slate-800">{q.options[r.correctIndex]}</span></>}</div>
                   <div className="ml-5 mt-0.5 text-slate-500">{r.explanation}</div>
                 </li>

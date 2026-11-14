@@ -41,7 +41,7 @@ export function Mentor() {
         <h1 className="font-display text-[30px] font-medium leading-tight tracking-tight text-ink">Ask Mira</h1>
         <p className="mt-1 text-sm text-slate-500">Your mentor answers from your actual profile, evidence, assessments and roadmap history — never invented achievements.</p>
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-line bg-white p-4" aria-live="polite">
+      <div className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-line bg-card p-4" aria-live="polite" role="log" aria-label="Conversation with Mira" tabIndex={0}>
         {!loaded && <p className="flex items-center gap-2 text-sm text-slate-500"><Spinner /> Loading conversation…</p>}
         {messages.map((m) => (
           <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>

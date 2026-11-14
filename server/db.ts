@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS roadmap_revision (id INTEGER PRIMARY KEY AUTOINCREMEN
 CREATE TABLE IF NOT EXISTS milestone_progress (key TEXT PRIMARY KEY, status TEXT NOT NULL, updated_at TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS agent_run (id INTEGER PRIMARY KEY AUTOINCREMENT, trigger TEXT NOT NULL, status TEXT NOT NULL, started_at TEXT NOT NULL, finished_at TEXT);
 CREATE TABLE IF NOT EXISTS agent_step (id INTEGER PRIMARY KEY AUTOINCREMENT, run_id INTEGER NOT NULL, agent TEXT NOT NULL, kind TEXT NOT NULL, model TEXT, status TEXT NOT NULL, started_at TEXT NOT NULL, duration_ms INTEGER, input_summary TEXT NOT NULL, output_summary TEXT NOT NULL DEFAULT '', tokens_in INTEGER, tokens_out INTEGER, error TEXT);
+CREATE INDEX IF NOT EXISTS idx_step_run ON agent_step(run_id);
+CREATE INDEX IF NOT EXISTS idx_revision_role ON roadmap_revision(role_id, id);
 CREATE TABLE IF NOT EXISTS mentor_message (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT NOT NULL, kind TEXT NOT NULL, content TEXT NOT NULL, created_at TEXT NOT NULL);
 `);
 
@@ -128,8 +130,15 @@ export function getRun(id: number): AgentRun | null {
   return { id: r.id as number, trigger: r.trigger as string, status: r.status as AgentRun['status'], startedAt: r.started_at as string, finishedAt: (r.finished_at as string) ?? null, steps };
 }
 export function listRuns(limit = 15): AgentRun[] {
-  const ids = (db.prepare('SELECT id FROM agent_run ORDER BY id DESC LIMIT ?').all(limit) as Row[]).map((r) => r.id as number);
-  return ids.map((id) => getRun(id)!).filter(Boolean);
+  // Two queries total (runs, then all their steps) instead of one query per run.
+  const runs = db.prepare('SELECT * FROM agent_run ORDER BY id DESC LIMIT ?').all(limit) as Row[];
+  if (!runs.length) return [];
+  const ids = runs.map((r) => r.id as number);
+  const steps = (db.prepare(`SELECT * FROM agent_step WHERE run_id IN (${ids.map(() => '?').join(',')}) ORDER BY id`).all(...ids) as Row[]).map(mapStep);
+  return runs.map((r) => ({
+    id: r.id as number, trigger: r.trigger as string, status: r.status as AgentRun['status'], startedAt: r.started_at as string,
+    finishedAt: (r.finished_at as string) ?? null, steps: steps.filter((st) => st.runId === r.id),
+  }));
 }
 export function activeRunId(): number | null {
   const r = db.prepare("SELECT id FROM agent_run WHERE status = 'running' ORDER BY id DESC LIMIT 1").get() as Row | undefined;

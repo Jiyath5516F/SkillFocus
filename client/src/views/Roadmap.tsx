@@ -73,10 +73,10 @@ export function Roadmap() {
           const status = state.progress[m.key]?.status ?? 'todo';
           const isNew = rev.diff?.added.includes(m.key);
           return (
-            <li key={m.key} className={`rounded-xl border bg-white p-5 ${m.kind === 'remediation' ? 'border-rose-200' : 'border-line'} ${status === 'done' ? 'opacity-80' : ''}`}>
+            <li key={m.key} className={`rounded-xl border bg-card p-5 ${m.kind === 'remediation' ? 'border-rose-200' : 'border-line'} ${status === 'done' ? 'border-emerald-200' : ''}`}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex min-w-0 gap-3">
-                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${status === 'done' ? 'bg-emerald-600 text-white' : 'bg-paper-deep text-slate-600'}`}>{status === 'done' ? '✓' : i + 1}</div>
+                  <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${status === 'done' ? 'bg-emerald-700 text-white' : 'bg-paper-deep text-slate-600'}`}>{status === 'done' ? '✓' : i + 1}</div>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <h3 className="font-semibold text-slate-900">{m.title}</h3>
@@ -91,7 +91,7 @@ export function Roadmap() {
                   <div className="flex shrink-0 rounded-lg border border-line p-0.5" role="group" aria-label={`Status for ${m.title}`}>
                     {STATUS.map((s) => (
                       <button key={s.id} disabled={saving === m.key} onClick={() => setStatus(m.key, s.id)} aria-pressed={status === s.id}
-                        className={`rounded-md px-2.5 py-1 text-xs font-medium ${status === s.id ? (s.id === 'done' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-white') : 'text-slate-600 hover:bg-paper-deep'}`}>
+                        className={`rounded-md px-2.5 py-1 text-xs font-medium ${status === s.id ? (s.id === 'done' ? 'bg-emerald-700 text-white' : 'bg-slate-800 text-white') : 'text-slate-600 hover:bg-paper-deep'}`}>
                         {s.label}
                       </button>
                     ))}

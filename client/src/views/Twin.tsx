@@ -51,7 +51,7 @@ export function Twin() {
           </div>
         </Card>
         <Card className="lg:col-span-2" title="Skill shape" subtitle="Required vs. effective (evidence-weighted) vs. self-reported level">
-          <div className="h-80">
+          <div className="h-80" role="img" aria-label="Radar chart of required, effective and self-reported levels per skill. The same values are listed in the evidence ledger below.">
             <ResponsiveContainer>
               <RadarChart data={radar} outerRadius="78%">
                 <PolarGrid stroke="#e4dccb" />

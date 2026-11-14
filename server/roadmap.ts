@@ -1,6 +1,6 @@
 // Deterministic roadmap structure: slot order (prerequisites + remediation placement), templates, assembly.
 import { LEVEL_LABELS, RESOURCES, ROLE_BY_ID, SKILL_BY_ID, skillName } from '../shared/catalog';
-import type { AssessmentAttempt, Milestone, MilestoneKind, Resource, TwinResult } from '../shared/types';
+import type { AssessmentAttempt, Milestone, MilestoneKind, RequirementResult, Resource, TwinResult } from '../shared/types';
 import { ASSESSMENTS } from './assessments';
 
 export interface Slot {
@@ -13,7 +13,7 @@ export interface Slot {
   prerequisites: string[];
   candidates: Resource[];
   impact: number;
-  priority: string;
+  priority: RequirementResult['priority'];
 }
 
 export function conceptLabel(skillId: string, concept: string): string {

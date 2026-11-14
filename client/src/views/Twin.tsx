@@ -163,23 +163,28 @@ export function Twin() {
               ) : <p className="mt-4 text-sm text-white/60">Select one or more gap skills.</p>}
             </Card>
 
-            <Card title="Compare career goals" subtitle="Same evidence, different role requirements">
-              <ul className="space-y-3">
-                {comparisons.map(({ role: r, twin: t }) => (
-                  <li key={r.id} className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2"><span className="font-medium text-white">{r.title}</span>{r.id === twin.roleId && <Badge tone="brand">current</Badge>}</div>
-                      <div className="truncate text-xs text-white/60">Top gaps: {t.orderedGaps.slice(0, 3).map(skillName).join(', ') || 'none'}</div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-3">
-                      <span className="tabular-nums text-sm font-semibold">{t.readiness}%</span>
-                      {r.id !== twin.roleId && <Button variant="secondary" disabled={busy} onClick={() => switchGoal(r.id)}>Switch goal</Button>}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-3 text-xs text-white/60">Switching keeps your evidence, assessments and earlier plans.</p>
-            </Card>
+            <Card title="Career matching" subtitle={state.matching?.alternatives ? 'Ranked by the Career Matching Agent — same evidence, every role' : 'Same evidence, different role requirements'}>
+          <ol className="space-y-3">
+            {(state.matching?.alternatives ?? comparisons.map(({ role: r, twin: t }) => ({ roleId: r.id, title: r.title, readiness: t.readiness, provenShare: 0, topGaps: t.orderedGaps.slice(0, 3) })))
+              .filter((a) => ROLE_BY_ID[a.roleId])
+              .map((a, i) => (
+              <li key={a.roleId} className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white">{i + 1}</span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2"><span className="font-medium text-white">{a.title}</span>{a.roleId === twin.roleId && <Badge tone="brand">current</Badge>}</div>
+                    <div className="truncate text-xs text-white/60">Top gaps: {a.topGaps.map(skillName).join(', ') || 'none'}</div>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className="tabular-nums text-sm font-semibold">{a.readiness}%</span>
+                  {a.roleId !== twin.roleId && <Button variant="secondary" disabled={busy} onClick={() => switchGoal(a.roleId)}>Switch goal</Button>}
+                </div>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-3 text-xs text-white/60">Switching keeps your evidence, assessments and earlier plans.</p>
+        </Card>
           </div>
           </TabPanel>
           <TabPanel className="space-y-6">

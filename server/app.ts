@@ -15,7 +15,7 @@ import { ASSESSMENTS, ASSESSMENT_BY_ID, toPublic } from './assessments';
 import * as store from './db';
 import { countAnswered, grade } from './grading';
 import { aiConfigured, describeError, MODEL } from './llm';
-import { BusyError, currentSnapshot, startAnalyze, startAssessmentRun, startGoalChange } from './orchestrator';
+import { BusyError, currentSnapshot, recordSingleStep, startAnalyze, startAssessmentRun, startGoalChange } from './orchestrator';
 import { seedDemo, seedNewAccount } from './seed';
 import { buildState, mentorSnapshot } from './state';
 
@@ -179,19 +179,13 @@ api.post('/goal', aiLimit, (req, res) => {
 api.post('/roles/suggest', aiLimit, async (req, res) => {
   const body = z.object({ aim: z.string().trim().min(3).max(160), avoid: z.array(z.string().max(80)).max(12).optional() }).safeParse(req.body);
   if (!body.success) return res.status(400).json({ error: 'Describe your aim in 3–160 characters' });
-  const runId = store.createRun('role_design');
-  const t0 = Date.now();
-  const stepId = store.startStep(runId, 'Career Matching', 'llm', MODEL, `Design role profiles for aim: "${body.data.aim.slice(0, 120)}"`);
   try {
-    const r = await designRoles(body.data.aim, body.data.avoid ?? [], store.getProfile());
-    store.endStep(stepId, { status: 'completed', durationMs: Date.now() - t0, outputSummary: r.data.map((o) => `${o.title} (${o.requirements.length} skills)`).join(' · '), tokensIn: r.tokensIn, tokensOut: r.tokensOut });
-    store.finishRun(runId, 'completed');
-    res.json({ options: r.data });
+    const options = await recordSingleStep('role_design', 'Career Matching', `Design role profiles for aim: "${body.data.aim.slice(0, 120)}"`,
+      () => designRoles(body.data.aim, body.data.avoid ?? [], store.getProfile()),
+      (d) => d.map((o) => `${o.title} (${o.requirements.length} skills)`).join(' · '));
+    res.json({ options });
   } catch (e) {
-    const msg = describeError(e);
-    store.endStep(stepId, { status: 'failed', durationMs: Date.now() - t0, error: msg });
-    store.finishRun(runId, 'failed');
-    res.status(502).json({ error: `Mira couldn't design roles right now: ${msg}` });
+    res.status(502).json({ error: `Mira couldn't design roles right now: ${describeError(e)}` });
   }
 });
 
@@ -303,20 +297,13 @@ api.post('/mentor', aiLimit, async (req, res) => {
   store.addMessage('user', 'chat', body.data.message);
   const history = store.listMessages(12).filter((m) => m.kind === 'chat').map((m) => ({ role: m.role, content: m.content }));
   while (history.length && history[0].role !== 'user') history.shift();
-  const runId = store.createRun('mentor_question');
-  const t0 = Date.now();
-  const stepId = store.startStep(runId, 'Mira (Mentor)', 'llm', MODEL, `Question: ${body.data.message.slice(0, 200)}`);
   try {
-    const r = await mentorReply(mentorSnapshot(), history);
-    store.endStep(stepId, { status: 'completed', durationMs: Date.now() - t0, outputSummary: r.data.slice(0, 280), tokensIn: r.tokensIn, tokensOut: r.tokensOut });
-    store.finishRun(runId, 'completed');
-    store.addMessage('assistant', 'chat', r.data);
+    const reply = await recordSingleStep('mentor_question', 'Mira (Mentor)', `Question: ${body.data.message.slice(0, 200)}`,
+      () => mentorReply(mentorSnapshot(), history), (d) => d);
+    store.addMessage('assistant', 'chat', reply);
     res.json(store.listMessages(60));
   } catch (e) {
-    const msg = describeError(e);
-    store.endStep(stepId, { status: 'failed', durationMs: Date.now() - t0, error: msg });
-    store.finishRun(runId, 'failed');
-    res.status(502).json({ error: `Mira could not answer: ${msg}` });
+    res.status(502).json({ error: `Mira could not answer: ${describeError(e)}` });
   }
 });
 

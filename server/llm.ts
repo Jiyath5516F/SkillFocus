@@ -6,6 +6,8 @@ import type { z } from 'zod';
 // In the cloud dev container ANTHROPIC_* vars belong to the coding agent, so Mira uses its own names first.
 const apiKey = process.env.SKILLFOCUS_ANTHROPIC_API_KEY || process.env.MIRA_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY || '';
 export const MODEL = process.env.MIRA_MODEL || 'claude-opus-5-5';
+/** Smaller model for short outputs (mentor summaries, matching explanations). */
+export const FAST_MODEL = process.env.MIRA_FAST_MODEL || 'claude-haiku-5-5';
 type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 const EFFORT = (process.env.MIRA_EFFORT || 'low') as Effort;
 export const aiConfigured = apiKey.length > 0;
@@ -42,10 +44,10 @@ function requireClient(): Anthropic {
 }
 
 /** Structured call: JSON output constrained by schema, then re-validated with zod. */
-export async function structured<S extends z.ZodType>(opts: { system: string; user: string; schema: S; maxTokens?: number }): Promise<LLMResult<z.infer<S>>> {
+export async function structured<S extends z.ZodType>(opts: { system: string; user: string; schema: S; maxTokens?: number; model?: string }): Promise<LLMResult<z.infer<S>>> {
   const c = requireClient();
   const res = await c.messages.parse({
-    model: MODEL,
+    model: opts.model ?? MODEL,
     max_tokens: opts.maxTokens ?? 8000,
     system: opts.system,
     messages: [{ role: 'user', content: opts.user }],
@@ -59,10 +61,10 @@ export async function structured<S extends z.ZodType>(opts: { system: string; us
 }
 
 /** Plain-text call (mentor). */
-export async function text(opts: { system: string; messages: { role: 'user' | 'assistant'; content: string }[]; maxTokens?: number }): Promise<LLMResult<string>> {
+export async function text(opts: { system: string; messages: { role: 'user' | 'assistant'; content: string }[]; maxTokens?: number; model?: string }): Promise<LLMResult<string>> {
   const c = requireClient();
   const res = await c.messages.create({
-    model: MODEL,
+    model: opts.model ?? MODEL,
     max_tokens: opts.maxTokens ?? 4000,
     system: opts.system,
     messages: opts.messages,

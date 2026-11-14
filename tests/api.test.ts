@@ -20,6 +20,9 @@ const call = async (path: string, method = 'GET', body?: unknown, auth: string |
   return { status: res.status, headers: res.headers, json: (await res.json()) as any };
 };
 const sessionFrom = (headers: Headers) => (headers.get('set-cookie') ?? '').split(';')[0];
+const waitRun = async (id: number): Promise<AgentRun> => {
+  for (;;) { const run: AgentRun = (await call(`/runs/${id}`)).json; if (run.status !== 'running') return run; await new Promise((r) => setTimeout(r, 20)); }
+};
 
 before(async () => {
   await new Promise<void>((r) => { server = app.listen(0, '127.0.0.1', () => r()); });
@@ -167,6 +170,30 @@ describe('custom career aims', () => {
   });
   it('rejects aims without enough catalog skills', async () => {
     assert.equal((await call('/roles', 'POST', { title: 'X', summary: '', requirements: [{ skillId: 'nope', level: 1, weight: 1 }, { skillId: 'nah', level: 1, weight: 1 }, { skillId: 'no', level: 1, weight: 1 }] })).status, 400);
+  });
+});
+
+describe('core scenarios without AI (rule-based fallback)', () => {
+  it('Scenario B: a failed JavaScript check inserts remediation before React', async () => {
+    await call('/demo/reset', 'POST');
+    await waitRun((await call('/analyze', 'POST')).json.runId);
+    const KEY: Record<string, number> = { js1: 1, js2: 2, js3: 2, js4: 1, js5: 1, js6: 2, js7: 1, js8: 1 };
+    const answers = Object.fromEntries(Object.entries(KEY).map(([k, v]) => [k, ['js1', 'js2'].includes(k) ? v : (v + 1) % 4]));
+    const sub = await call('/assessments/js-core/submit', 'POST', { answers });
+    assert.equal(sub.json.attempt.score, 25);
+    await waitRun(sub.json.runId);
+    const keys: string[] = (await call('/state')).json.roadmap.milestones.map((m: { key: string }) => m.key);
+    const firstFix = keys.findIndex((k) => k.startsWith('fix:javascript:'));
+    assert.ok(firstFix >= 0 && firstFix < keys.indexOf('learn:react'), keys.join(', '));
+  });
+  it('Scenario C: a goal change keeps assessment history and builds a Data Analyst roadmap', async () => {
+    const before = (await call('/state')).json;
+    await waitRun((await call('/goal', 'POST', { roleId: 'data_analyst' })).json.runId);
+    const after = (await call('/state')).json;
+    assert.equal(after.roadmap.roleId, 'data_analyst');
+    assert.equal(after.attempts.length, before.attempts.length);
+    assert.ok(after.revisions.some((r: { roleId: string }) => r.roleId === 'fullstack'), 'earlier plan kept');
+    assert.ok(after.matching.alternatives.length >= 3, 'roles ranked by Career Matching');
   });
 });
 

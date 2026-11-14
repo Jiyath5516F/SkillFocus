@@ -1,6 +1,6 @@
 // Orchestrator: coordinates specialised agents per event, records every step (LLM vs deterministic vs fallback).
-import { LEVEL_LABELS, ROLE_BY_ID, skillName } from '../shared/catalog';
-import { computeTwin, diffMilestones } from '../shared/engine';
+import { LEVEL_LABELS, ROLES, ROLE_BY_ID, skillName } from '../shared/catalog';
+import { computeTwin, diffMilestones, rankRoles } from '../shared/engine';
 import type { AssessmentAttempt, RevisionSnapshot, TwinResult } from '../shared/types';
 import { runAssessmentAgent } from './agents/assessmentAgent';
 import { runCareerMatching, sanitizeMatching } from './agents/careerMatching';
@@ -50,7 +50,7 @@ class RunCtx {
     const id = store.startStep(this.runId, agent, 'llm', MODEL, clip(input));
     try {
       const r = await fn();
-      store.endStep(id, { status: 'completed', durationMs: Date.now() - t0, outputSummary: clip(out(r.data)), tokensIn: r.tokensIn, tokensOut: r.tokensOut });
+      store.endStep(id, { status: 'completed', durationMs: Date.now() - t0, outputSummary: clip(out(r.data)), tokensIn: r.tokensIn, tokensOut: r.tokensOut, model: r.model });
       return r.data;
     } catch (e) {
       this.usedFallback = true;
@@ -62,6 +62,26 @@ class RunCtx {
   fallback(agent: string, input: string, output: string) {
     const id = store.startStep(this.runId, agent, 'fallback', null, clip(input));
     store.endStep(id, { status: 'completed', durationMs: 0, outputSummary: clip(output) });
+  }
+}
+
+/**
+ * Records a synchronous, single-agent run (e.g. a mentor answer or role design) in Agent activity.
+ * Returns the agent's data; rethrows failures after logging them.
+ */
+export async function recordSingleStep<T>(trigger: string, agent: string, input: string, fn: () => Promise<LLMResult<T>>, out: (t: T) => string): Promise<T> {
+  const runId = store.createRun(trigger);
+  const t0 = Date.now();
+  const stepId = store.startStep(runId, agent, 'llm', MODEL, clip(input));
+  try {
+    const r = await fn();
+    store.endStep(stepId, { status: 'completed', durationMs: Date.now() - t0, outputSummary: clip(out(r.data)), tokensIn: r.tokensIn, tokensOut: r.tokensOut, model: r.model });
+    store.finishRun(runId, 'completed');
+    return r.data;
+  } catch (e) {
+    store.endStep(stepId, { status: 'failed', durationMs: Date.now() - t0, error: describeError(e) });
+    store.finishRun(runId, 'failed');
+    throw e;
   }
 }
 
@@ -125,6 +145,11 @@ async function planFlow(ctx: RunCtx, o: PlanOpts) {
     () => computeTwin(profile, store.listEvidence(), profile.targetRoleId),
     (t) => `Readiness estimate ${t.readiness}% · gaps (prereq order): ${t.orderedGaps.map(skillName).join(' → ') || 'none'}`);
 
+  // 2b) Career Matching — rank every role (built-in + this learner's custom aims) against the same evidence
+  const alternatives = ctx.det('Career Matching', 'Rank all career roles against the same evidence',
+    () => rankRoles(profile, store.listEvidence(), [...ROLES.map((r) => r.id), ...(profile.customRoles ?? []).map((r) => r.id)]),
+    (r) => r.slice(0, 4).map((x) => `${x.title} ${x.readiness}%`).join(' · '));
+
   // 3) Learning Path Architect — deterministic slot ordering (prerequisites + remediation placement)
   const slots = ctx.det('Learning Path Architect', `Order ${twin.orderedGaps.length} gaps by prerequisites; place remediation from latest assessments`,
     () => buildSlots(twin, attempts),
@@ -139,10 +164,10 @@ async function planFlow(ctx: RunCtx, o: PlanOpts) {
       () => runPathArchitect(profile, twin, slots, { trigger: o.trigger, diagnosis: o.diagnosis, previousKeys: prev?.milestones.map((m) => m.key), insights }),
       (d) => `${d.milestones.length} milestones · ${d.changeSummary}`),
   ]);
-  if (matching) store.setLearnerJson('matching', sanitizeMatching(matching, twin));
+  if (matching) store.setLearnerJson('matching', { ...sanitizeMatching(matching, twin), alternatives });
   else {
     ctx.fallback('Career Matching', 'AI unavailable', 'Rule-based critical path from impact and prerequisites.');
-    store.setLearnerJson('matching', { headline: `Readiness estimate ${twin.readiness}% for ${ROLE_BY_ID[twin.roleId].title} (rule-based).`, criticalPath: twin.orderedGaps.slice(0, 3), notes: [] });
+    store.setLearnerJson('matching', { headline: `Readiness estimate ${twin.readiness}% for ${ROLE_BY_ID[twin.roleId].title} (rule-based).`, criticalPath: twin.orderedGaps.slice(0, 3), notes: [], alternatives });
   }
   if (!path) ctx.fallback('Learning Path Architect', 'AI unavailable', 'Rule-based milestones from curated catalog templates.');
 

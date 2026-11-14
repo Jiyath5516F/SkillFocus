@@ -131,7 +131,8 @@ Production: `npm run build && npm start`, which serves the built client and the 
 | Variable | Default | Purpose |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | — | Claude API key (never sent to the browser) |
-| `MIRA_MODEL` / `MIRA_EFFORT` | `claude-opus-5-5` / `low` | Model and effort for all agents |
+| `MIRA_MODEL` / `MIRA_EFFORT` | `claude-opus-5-5` / `low` | Model and effort for the agents |
+| `MIRA_FAST_MODEL` | `claude-haiku-5-5` | Smaller model for short outputs (matching explanation, mentor summaries) |
 | `PORT` / `HOST` | `8090` / `0.0.0.0` | Listen address (use `127.0.0.1` behind a proxy) |
 | `MIRA_BASE_PATH` | *(empty)* | Optional sub-path, e.g. `/Mira` |
 | `MIRA_DB_PATH` | `data/mira.db` | SQLite file |
@@ -140,7 +141,7 @@ Production: `npm run build && npm start`, which serves the built client and the 
 
 ```bash
 npm test             # 41 unit + API tests: engine, grading, roadmap assembly, AI-output validation,
-                     # authentication, account isolation, input validation, security headers, cohort analytics,
+                     # a fake-model test of the AI path, authentication, account isolation, input validation, security headers, cohort analytics,
                      # and the no-AI rule-based fallback
 npm run acceptance   # 3 end-to-end acceptance tests against a running server (real agent runs)
 npm run check        # typecheck + unit tests + production build

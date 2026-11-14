@@ -258,7 +258,7 @@ export interface AppState {
   progress: Record<string, MilestoneProgress>;
   attempts: AssessmentAttempt[];
   insights: { strengths: string[]; weaknesses: string[]; uncertainties: string[]; summary: string } | null;
-  matching: { headline: string; criticalPath: string[]; notes: { skillId: string; note: string }[] } | null;
+  matching: { headline: string; criticalPath: string[]; notes: { skillId: string; note: string }[]; alternatives?: { roleId: string; title: string; readiness: number; provenShare: number; topGaps: string[] }[] } | null;
   aiConfigured: boolean;
   activeRunId: number | null;
 }

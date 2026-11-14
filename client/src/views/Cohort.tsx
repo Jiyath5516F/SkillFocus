@@ -32,7 +32,7 @@ export function Cohort() {
       </div>
 
       <div className="rounded-lg border border-indigo-400/30 bg-indigo-400/10 px-4 py-2 text-sm text-indigo-300">
-        Illustrative sample cohort of 12 learners (not real people) plus your own live profile. All numbers use the same deterministic engine as Career Twin.
+        Preview with sample data: 12 example learners (not real people) plus your own live profile. Each account's data stays private, so an institution would see its own learners here only after they join and consent. The numbers use the same readiness formula as Career Twin.
       </div>
 
       {!report ? <p className="flex items-center gap-2 text-sm text-white/60"><Spinner /> Computing cohort…</p> : (

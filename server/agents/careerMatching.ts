@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { ROLE_BY_ID, skillName } from '../../shared/catalog';
 import type { Profile, TwinResult } from '../../shared/types';
-import { structured, type LLMResult } from '../llm';
+import { FAST_MODEL, structured, type LLMResult } from '../llm';
 
 const Schema = z.object({
   headline: z.string(),
@@ -31,7 +31,7 @@ export async function runCareerMatching(profile: Profile, twin: TwinResult, insi
     gapsInPrerequisiteOrder: twin.orderedGaps,
     skillIntelligence: insights, // strengths / weaknesses / uncertainties from the Skill Intelligence Agent
   };
-  return structured({ system: SYSTEM, user: JSON.stringify(input), schema: Schema });
+  return structured({ system: SYSTEM, user: JSON.stringify(input), schema: Schema, model: FAST_MODEL });
 }
 
 export function sanitizeMatching(out: MatchingOutput, twin: TwinResult): MatchingOutput {

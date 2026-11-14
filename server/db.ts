@@ -153,9 +153,9 @@ export function finishRun(id: number, status: AgentRun['status']) {
 export function startStep(runId: number, agent: string, kind: AgentStep['kind'], model: string | null, inputSummary: string): number {
   return Number(cur().prepare("INSERT INTO agent_step (run_id, agent, kind, model, status, started_at, input_summary) VALUES (?, ?, ?, ?, 'running', ?, ?)").run(runId, agent, kind, model, now(), inputSummary).lastInsertRowid);
 }
-export function endStep(id: number, f: { status: AgentStep['status']; durationMs: number; outputSummary?: string; tokensIn?: number | null; tokensOut?: number | null; error?: string | null; kind?: AgentStep['kind'] }) {
-  cur().prepare('UPDATE agent_step SET status = ?, duration_ms = ?, output_summary = ?, tokens_in = ?, tokens_out = ?, error = ?, kind = COALESCE(?, kind) WHERE id = ?')
-    .run(f.status, f.durationMs, f.outputSummary ?? '', f.tokensIn ?? null, f.tokensOut ?? null, f.error ?? null, f.kind ?? null, id);
+export function endStep(id: number, f: { status: AgentStep['status']; durationMs: number; outputSummary?: string; tokensIn?: number | null; tokensOut?: number | null; error?: string | null; kind?: AgentStep['kind']; model?: string }) {
+  cur().prepare('UPDATE agent_step SET status = ?, duration_ms = ?, output_summary = ?, tokens_in = ?, tokens_out = ?, error = ?, kind = COALESCE(?, kind), model = COALESCE(?, model) WHERE id = ?')
+    .run(f.status, f.durationMs, f.outputSummary ?? '', f.tokensIn ?? null, f.tokensOut ?? null, f.error ?? null, f.kind ?? null, f.model ?? null, id);
 }
 function mapStep(r: Row): AgentStep {
   return {

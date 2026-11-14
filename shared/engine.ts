@@ -177,3 +177,16 @@ export function forecastReadiness(
 
 /** First projected week at which readiness reaches `target`, or null if the roadmap never gets there. */
 export const weeksToReach = (points: ForecastPoint[], target: number) => points.find((p) => p.readiness >= target)?.week ?? null;
+
+export interface RoleRanking { roleId: string; title: string; readiness: number; provenShare: number; topGaps: string[] }
+
+/** Career matching across roles: the same evidence scored against every role, best fit first. */
+export function rankRoles(profile: Profile, evidence: Evidence[], roleIds: string[]): RoleRanking[] {
+  return roleIds
+    .filter((id) => ROLE_BY_ID[id])
+    .map((id) => {
+      const t = computeTwin(profile, evidence, id);
+      return { roleId: id, title: ROLE_BY_ID[id].title, readiness: t.readiness, provenShare: proofBreakdown(t.requirements).provenShare, topGaps: t.orderedGaps.slice(0, 3) };
+    })
+    .sort((a, b) => b.readiness - a.readiness || a.title.localeCompare(b.title));
+}

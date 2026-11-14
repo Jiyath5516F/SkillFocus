@@ -28,6 +28,10 @@ function StatusIcon({ s }: { s: AgentStep['status'] }) {
   return <span className="text-slate-500">–</span>;
 }
 
+/** Two model calls that started within half a second of each other were launched concurrently by the orchestrator. */
+const isParallel = (a: AgentStep, b: AgentStep) =>
+  a.kind === 'llm' && b.kind === 'llm' && Math.abs(new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()) < 500;
+
 export function RunView({ run }: { run: AgentRun }) {
   const llmSteps = run.steps.filter((s) => s.kind === 'llm' && s.status === 'completed');
   const tokens = llmSteps.reduce((t, s) => t + (s.tokensIn ?? 0) + (s.tokensOut ?? 0), 0);
@@ -36,7 +40,9 @@ export function RunView({ run }: { run: AgentRun }) {
       <div className="mb-3 flex flex-wrap items-center gap-1.5">
         {run.steps.map((s, i) => (
           <span key={s.id} className="flex items-center gap-1.5">
-            {i > 0 && <span className="text-slate-300">→</span>}
+            {i > 0 && (isParallel(run.steps[i - 1], s)
+              ? <span className="font-semibold text-marigold" title="Ran in parallel">‖</span>
+              : <span className="text-slate-500" aria-hidden>→</span>)}
             <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${s.kind === 'llm' ? AGENT_COLORS[s.agent] ?? 'bg-slate-600' : 'bg-slate-400'} ${s.status === 'failed' ? 'opacity-50 line-through' : ''}`}>
               {s.status === 'running' && <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-white" />}
               {s.agent.replace(' (Mentor)', '')}
@@ -45,7 +51,7 @@ export function RunView({ run }: { run: AgentRun }) {
         ))}
       </div>
       <div className="mb-3 text-xs text-slate-500">
-        {llmSteps.length} model calls · {run.steps.filter((s) => s.kind === 'deterministic').length} deterministic steps{tokens ? ` · ${tokens.toLocaleString()} tokens` : ''}
+        {llmSteps.length} model calls · {run.steps.filter((s) => s.kind === 'deterministic').length} deterministic steps{tokens ? ` · ${tokens.toLocaleString()} tokens` : ''} · ‖ = ran in parallel
       </div>
       <ol className="space-y-2">
         {run.steps.map((s) => (
